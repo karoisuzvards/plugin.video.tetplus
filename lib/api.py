@@ -1,13 +1,13 @@
 import json
-import urllib
-import urllib2
-import config
-import utils
-import constants
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
+from . import config
+from . import utils
+from . import constants
 import time
 import datetime
 
-from exceptions import ApiError
+from .exceptions import ApiError
 
 try:
     import xbmc, xbmcplugin
@@ -18,7 +18,7 @@ API_BASEURL = "https://manstv.lattelecom.tv"
 API_ENDPOINT = API_BASEURL + "/api/v1.7"
 
 def get_url_opener(referrer=None):
-    opener = urllib2.build_opener()
+    opener = urllib.request.build_opener()
     # Headers from Nexus 6P
     opener.addheaders = [
         ('User-Agent',
@@ -42,7 +42,7 @@ def login(force=False):
               'uid': config.get_unique_id(),
               'password': config.get_setting(constants.PASSWORD)}
 
-    response = opener.open(API_ENDPOINT + '/post/user/users', urllib.urlencode(values))
+    response = opener.open(API_ENDPOINT + '/post/user/users', urllib.parse.urlencode(values))
 
     response_code = response.getcode()
     response_text = response.read()
@@ -60,7 +60,7 @@ def login(force=False):
     json_object = None
     try:
         json_object = json.loads(response_text)
-    except ValueError, e:
+    except ValueError as e:
         config.set_setting_bool(constants.LOGGED_IN, False)
         config.set_setting(constants.TOKEN, "")
         utils.log("Did not receive json, something wrong: " + response_text)
@@ -91,7 +91,7 @@ def get_channels():
     json_object = None
     try:
         json_object = json.loads(response_text)
-    except ValueError, e:
+    except ValueError as e:
         raise ApiError("Did not receive json, something wrong: " + response_text)
 
     if "included" not in json_object:
@@ -140,7 +140,7 @@ def get_stream_url(data_url):
     json_object = None
     try:
         json_object = json.loads(response_text)
-    except ValueError, e:
+    except ValueError as e:
         config.set_setting(constants.LOGGED_IN, False)
         raise ApiError("Did not receive json, something wrong: " + response_text)
 
@@ -188,7 +188,7 @@ def get_epg(date):
     json_object = None
     try:
         json_object = json.loads(response_text)
-    except ValueError, e:
+    except ValueError as e:
         raise ApiError("Did not receive json, something wrong: " + response_text)
 
     return json_object

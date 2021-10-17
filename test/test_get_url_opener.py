@@ -58,7 +58,7 @@ class TestGet_url_opener(TestCase):
         except Exception as e:
             self.fail(e)
 
-        print "Successfully logged in"
+        print("Successfully logged in")
 
     def test_get_channels(self):
         patch_config()
@@ -69,7 +69,7 @@ class TestGet_url_opener(TestCase):
         except Exception as e:
             self.fail(e)
 
-        print "Successfully retrieved channel list"
+        print("Successfully retrieved channel list")
 
     @unittest.skipIf(skip_regional, REGION_NOTICE)
     def test_get_stream_url(self):
@@ -83,7 +83,7 @@ class TestGet_url_opener(TestCase):
         except Exception as e:
             self.fail(e)
 
-        print "Successfully retrieved stream URL"
+        print("Successfully retrieved stream URL")
 
     def test_get_epg(self):
         patch_config()
@@ -96,7 +96,7 @@ class TestGet_url_opener(TestCase):
         except Exception as e:
             self.fail(e)
 
-        print "Successfully got EPG data"
+        print("Successfully got EPG data")
 
 if __name__ == '__main__':
     unittest.main()

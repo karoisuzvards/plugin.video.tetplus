@@ -1,13 +1,13 @@
 import sys
 import textwrap
 import traceback
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import xbmc
 import datetime
 import time
 import _strptime
 
-import config
+from . import config
 
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
 
@@ -52,7 +52,7 @@ def get_url(s):
         if len(pair) < 3: continue
         kv = pair.split("=", 1)
         k = kv[0]
-        v = urllib.unquote_plus(kv[1])
+        v = urllib.parse.unquote_plus(kv[1])
         dict[k] = v
     return dict
 

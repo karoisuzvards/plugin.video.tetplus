@@ -3,8 +3,8 @@ import sys
 import xbmcgui
 import xbmcplugin
 
-import api
-import utils
+from . import api
+from . import utils
 
 
 def make_channel_list():
