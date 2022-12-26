@@ -16,7 +16,7 @@ DATE_FORMAT_JSON = "%Y-%m-%d %H:%M:%S"
 
 from xbmcaddon import Addon
 
-data_dir = Addon().getAddonInfo('profile').decode('utf-8')
+data_dir = Addon().getAddonInfo('profile')
 
 riga = pytz.timezone('Europe/Riga')
 

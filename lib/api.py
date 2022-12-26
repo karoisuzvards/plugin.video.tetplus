@@ -14,8 +14,8 @@ try:
 except:
     pass
 
-API_BASEURL = "https://manstv.lattelecom.tv"
-API_ENDPOINT = API_BASEURL + "/api/v1.7"
+API_BASEURL = "https://api-prd.shortcut.lv"
+API_ENDPOINT = API_BASEURL + "/api"
 
 def get_url_opener(referrer=None):
     opener = urllib.request.build_opener()
@@ -42,7 +42,7 @@ def login(force=False):
               'uid': config.get_unique_id(),
               'password': config.get_setting(constants.PASSWORD)}
 
-    response = opener.open(API_ENDPOINT + '/post/user/users', urllib.parse.urlencode(values))
+    response = opener.open(API_ENDPOINT + '/post/user/users', urllib.parse.urlencode(values).encode("utf-8"))
 
     response_code = response.getcode()
     response_text = response.read()

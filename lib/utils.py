@@ -13,7 +13,7 @@ DATE_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
 
 
 def log(s):
-    xbmc.log("[%s v%s] %s" % (config.NAME, config.VERSION, s), level=xbmc.LOGNOTICE)
+    xbmc.log("[%s v%s] %s" % (config.NAME, config.VERSION, s), level=xbmc.LOGINFO)
 
 
 def log_error(message=None):
@@ -22,7 +22,7 @@ def log_error(message=None):
         exc_value = message
     xbmc.log("[%s v%s] ERROR: %s (%d) - %s" % (
         config.NAME, config.VERSION, exc_traceback.tb_frame.f_code.co_name, exc_traceback.tb_lineno, exc_value),
-             level=xbmc.LOGNOTICE)
+             level=xbmc.LOGINFO)
     traceback.print_exc()
 
 
