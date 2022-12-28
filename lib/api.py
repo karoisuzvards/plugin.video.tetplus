@@ -6,6 +6,7 @@ from . import utils
 from . import constants
 import time
 import datetime
+import ssl
 
 from .exceptions import ApiError
 
@@ -18,12 +19,17 @@ API_BASEURL = "https://api-prd.shortcut.lv"
 API_ENDPOINT = API_BASEURL + "/api"
 
 def get_url_opener(referrer=None):
+    # ctx=ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+    # ctx.set_default_verify_paths()
+
+    # https = urllib.request.HTTPSHandler(context=ctx)
     opener = urllib.request.build_opener()
-    # Headers from Nexus 6P
+    # Headers from Firefox 107
     opener.addheaders = [
         ('User-Agent',
-         'Shortcut.lv for Android TV v1.11.9 / Dalvik/2.1.0 (Linux; U; Android 7.1.1; sdk_google_atv_x86 Build/NYC)'),
-        ('Connection', 'keep-alive'),
+	'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:107.0) Gecko/20100101 Firefox/107.0'),
+        ('Content-Type', 'application/json'),
+        ('Accept', 'application/json'),
     ]
     return opener
 
@@ -78,7 +84,7 @@ def login(force=False):
 def get_channels():
     config.login_check()
 
-    url = API_ENDPOINT + '/get/content/packages?include=channels'
+    url = API_ENDPOINT + '/packaging/services?flattenBundles=true'
     opener = get_url_opener()
     response = opener.open(url)
     response_text = response.read()
@@ -94,25 +100,14 @@ def get_channels():
     except ValueError as e:
         raise ApiError("Did not receive json, something wrong: " + response_text)
 
-    if "included" not in json_object:
-        raise ApiError("Invalid response: " + response_text)
-
     channels = []
-    for item in json_object["included"]:
+    for item in json_object:
         if "type" not in item or "id" not in item:
-            continue
-
-        if item["type"] != "channels":
-            continue
-
-        if item["attributes"] is None or item["attributes"]["title"] is None:
             continue
 
         channels.append({
             'id': item["id"],
-            'name': item["attributes"]["title"],
-            'logo': item["attributes"]["logo-url"],
-            'thumb': item["attributes"]["epg-default-poster-url"]
+            'name': item["title"],
         })
 
     return channels

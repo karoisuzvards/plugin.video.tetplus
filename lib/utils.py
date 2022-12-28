@@ -13,7 +13,7 @@ DATE_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
 
 
 def log(s):
-    xbmc.log("[%s v%s] %s" % (config.NAME, config.VERSION, s), level=xbmc.LOGINFO)
+    xbmc.log("[%s v%s] %s" % (config.NAME, config.VERSION, s), level=xbmc.LOGFATAL)
 
 
 def log_error(message=None):
