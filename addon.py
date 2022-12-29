@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
     if len(params) == 0:
         channels.make_channel_list()
-    elif params.has_key("play"):
+    elif "play" in params:
         channels.play_channel()
     else:
         utils.log("Unknown url: " + sys.argv[0])

@@ -4,10 +4,10 @@ from xml.etree import ElementTree
 import pytz
 import xbmcgui
 
-import api
-import config
-import constants
-import utils
+from . import api
+from . import config
+from . import constants
+from . import utils
 
 EPG_FILE = "lattelecom-epg.xml"
 M3U_FILE = "channels.m3u"
@@ -16,7 +16,7 @@ DATE_FORMAT_JSON = "%Y-%m-%d %H:%M:%S"
 
 from xbmcaddon import Addon
 
-data_dir = Addon().getAddonInfo('profile').decode('utf-8')
+data_dir = Addon().getAddonInfo('profile')
 
 riga = pytz.timezone('Europe/Riga')
 

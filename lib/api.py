@@ -1,29 +1,33 @@
 import json
-import urllib
-import urllib2
-import config
-import utils
-import constants
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
+from . import config
+from . import utils
+from . import constants
 import time
 import datetime
+import ssl
 
-from exceptions import ApiError
+from .exceptions import ApiError
 
 try:
     import xbmc, xbmcplugin
 except:
     pass
 
-API_BASEURL = "https://manstv.lattelecom.tv"
-API_ENDPOINT = API_BASEURL + "/api/v1.7"
+API_BASEURL = "https://api-prd.shortcut.lv"
+API_ENDPOINT = API_BASEURL + "/api"
 
 def get_url_opener(referrer=None):
-    opener = urllib2.build_opener()
-    # Headers from Nexus 6P
+    opener = urllib.request.build_opener()
+    # Headers from Firefox 107
     opener.addheaders = [
         ('User-Agent',
-         'Shortcut.lv for Android TV v1.11.9 / Dalvik/2.1.0 (Linux; U; Android 7.1.1; sdk_google_atv_x86 Build/NYC)'),
-        ('Connection', 'keep-alive'),
+	'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:107.0) Gecko/20100101 Firefox/107.0'),
+        ('Content-Type', 'application/json'),
+        ('Accept', 'application/json'),
+        ('Authorization','Bearer <you_wish>'),
+        ('X-Device-ID','{"app":{"name":"Tet+","version":"2022_12_19-14_31_59-d62690b4"},"os":{"name":"Mac","version":"mac-os-x-15"},"browser":{"name":"Firefox","version":"108.0"}}'),
     ]
     return opener
 
@@ -42,7 +46,7 @@ def login(force=False):
               'uid': config.get_unique_id(),
               'password': config.get_setting(constants.PASSWORD)}
 
-    response = opener.open(API_ENDPOINT + '/post/user/users', urllib.urlencode(values))
+    response = opener.open(API_ENDPOINT + '/post/user/users', urllib.parse.urlencode(values).encode("utf-8"))
 
     response_code = response.getcode()
     response_text = response.read()
@@ -60,7 +64,7 @@ def login(force=False):
     json_object = None
     try:
         json_object = json.loads(response_text)
-    except ValueError, e:
+    except ValueError as e:
         config.set_setting_bool(constants.LOGGED_IN, False)
         config.set_setting(constants.TOKEN, "")
         utils.log("Did not receive json, something wrong: " + response_text)
@@ -78,7 +82,7 @@ def login(force=False):
 def get_channels():
     config.login_check()
 
-    url = API_ENDPOINT + '/get/content/packages?include=channels'
+    url = API_ENDPOINT + '/packaging/services?flattenBundles=true'
     opener = get_url_opener()
     response = opener.open(url)
     response_text = response.read()
@@ -91,28 +95,17 @@ def get_channels():
     json_object = None
     try:
         json_object = json.loads(response_text)
-    except ValueError, e:
+    except ValueError as e:
         raise ApiError("Did not receive json, something wrong: " + response_text)
 
-    if "included" not in json_object:
-        raise ApiError("Invalid response: " + response_text)
-
     channels = []
-    for item in json_object["included"]:
+    for item in json_object:
         if "type" not in item or "id" not in item:
-            continue
-
-        if item["type"] != "channels":
-            continue
-
-        if item["attributes"] is None or item["attributes"]["title"] is None:
             continue
 
         channels.append({
             'id': item["id"],
-            'name': item["attributes"]["title"],
-            'logo': item["attributes"]["logo-url"],
-            'thumb': item["attributes"]["epg-default-poster-url"]
+            'name': item["title"],
         })
 
     return channels
@@ -122,11 +115,8 @@ def get_stream_url(data_url):
     utils.log("Getting URL for channel: " + data_url)
     config.login_check()
 
-    streamurl = None
-
-    url = API_ENDPOINT + "/get/content/live-streams/" + data_url + "?include=quality"
+    url = API_ENDPOINT + "/stream/v2/channel/" + data_url
     opener = get_url_opener()
-    opener.addheaders.append(('Authorization', "Bearer " + config.get_setting(constants.TOKEN)))
     response = opener.open(url)
 
     response_text = response.read()
@@ -140,33 +130,36 @@ def get_stream_url(data_url):
     json_object = None
     try:
         json_object = json.loads(response_text)
-    except ValueError, e:
+    except ValueError as e:
         config.set_setting(constants.LOGGED_IN, False)
         raise ApiError("Did not receive json, something wrong: " + response_text)
 
-    stream_links = {}
+    return { 'stream': json_object["streams"]["dash"], 'licUrl': json_object["drm"]["com.widevine.alpha"] }
 
-    for stream in json_object["data"]:
+def get_license_token(data_url):
+    utils.log("Getting Licence token for channel: " + data_url)
+    config.login_check()
 
-        if stream["type"] != "live-streams":
-            continue
+    url = API_ENDPOINT + "/access-rights/resource-auth/channel/" + data_url
+    opener = get_url_opener()
+    response = opener.open(url)
 
-        url = stream["attributes"]["stream-url"] + "&auth_token=app_" + config.get_setting(constants.TOKEN)
+    response_text = response.read()
+    response_code = response.getcode()
 
-        if "_lq.stream" in stream["id"]:
-            stream_links["3-lq"] = url
-        elif "_mq.stream" in stream["id"]:
-            stream_links["2-mq"] = url
-        elif "_hq.stream" in stream["id"]:
-            stream_links["1-hq"] = url
-        elif "_hd.stream" in stream["id"]:
-            stream_links["0-hd"] = url
+    if response_code != 200:
+        config.set_setting_bool(constants.LOGGED_IN, False)
+        raise ApiError(
+            "Got incorrect response code while requesting licence token. Reponse code: " + response_code + ";\nText: " + response_text)
 
-    for key in sorted(stream_links.keys()):
-        streamurl = stream_links[key]
-        break
+    json_object = None
+    try:
+        json_object = json.loads(response_text)
+    except ValueError as e:
+        config.set_setting(constants.LOGGED_IN, False)
+        raise ApiError("Did not receive json, something wrong: " + response_text)
 
-    return streamurl
+    return json_object["token"]
 
 
 def get_epg(date):
@@ -188,7 +181,7 @@ def get_epg(date):
     json_object = None
     try:
         json_object = json.loads(response_text)
-    except ValueError, e:
+    except ValueError as e:
         raise ApiError("Did not receive json, something wrong: " + response_text)
 
     return json_object

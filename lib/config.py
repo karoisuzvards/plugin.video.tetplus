@@ -7,10 +7,10 @@ import xbmc
 import xbmcaddon
 import xbmcplugin
 
-import api
-import constants
-import utils
-from exceptions import ApiError
+from . import api
+from . import constants
+from . import utils
+from .exceptions import ApiError
 
 ADDON = xbmcaddon.Addon()
 APPID = xbmcaddon.Addon().getAddonInfo("id")

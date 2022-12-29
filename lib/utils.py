@@ -1,19 +1,19 @@
 import sys
 import textwrap
 import traceback
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import xbmc
 import datetime
 import time
 import _strptime
 
-import config
+from . import config
 
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
 
 
 def log(s):
-    xbmc.log("[%s v%s] %s" % (config.NAME, config.VERSION, s), level=xbmc.LOGNOTICE)
+    xbmc.log("[%s v%s] %s" % (config.NAME, config.VERSION, s), level=xbmc.LOGFATAL)
 
 
 def log_error(message=None):
@@ -22,7 +22,7 @@ def log_error(message=None):
         exc_value = message
     xbmc.log("[%s v%s] ERROR: %s (%d) - %s" % (
         config.NAME, config.VERSION, exc_traceback.tb_frame.f_code.co_name, exc_traceback.tb_lineno, exc_value),
-             level=xbmc.LOGNOTICE)
+             level=xbmc.LOGINFO)
     traceback.print_exc()
 
 
@@ -52,7 +52,7 @@ def get_url(s):
         if len(pair) < 3: continue
         kv = pair.split("=", 1)
         k = kv[0]
-        v = urllib.unquote_plus(kv[1])
+        v = urllib.parse.unquote_plus(kv[1])
         dict[k] = v
     return dict
 
