@@ -19,10 +19,6 @@ API_BASEURL = "https://api-prd.shortcut.lv"
 API_ENDPOINT = API_BASEURL + "/api"
 
 def get_url_opener(referrer=None):
-    # ctx=ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
-    # ctx.set_default_verify_paths()
-
-    # https = urllib.request.HTTPSHandler(context=ctx)
     opener = urllib.request.build_opener()
     # Headers from Firefox 107
     opener.addheaders = [
@@ -30,6 +26,8 @@ def get_url_opener(referrer=None):
 	'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:107.0) Gecko/20100101 Firefox/107.0'),
         ('Content-Type', 'application/json'),
         ('Accept', 'application/json'),
+        ('Authorization','Bearer <you_wish>'),
+        ('X-Device-ID','{"app":{"name":"Tet+","version":"2022_12_19-14_31_59-d62690b4"},"os":{"name":"Mac","version":"mac-os-x-15"},"browser":{"name":"Firefox","version":"108.0"}}'),
     ]
     return opener
 
@@ -117,11 +115,8 @@ def get_stream_url(data_url):
     utils.log("Getting URL for channel: " + data_url)
     config.login_check()
 
-    streamurl = None
-
-    url = API_ENDPOINT + "/get/content/live-streams/" + data_url + "?include=quality"
+    url = API_ENDPOINT + "/stream/v2/channel/" + data_url
     opener = get_url_opener()
-    opener.addheaders.append(('Authorization', "Bearer " + config.get_setting(constants.TOKEN)))
     response = opener.open(url)
 
     response_text = response.read()
@@ -139,29 +134,32 @@ def get_stream_url(data_url):
         config.set_setting(constants.LOGGED_IN, False)
         raise ApiError("Did not receive json, something wrong: " + response_text)
 
-    stream_links = {}
+    return { 'stream': json_object["streams"]["dash"], 'licUrl': json_object["drm"]["com.widevine.alpha"] }
 
-    for stream in json_object["data"]:
+def get_license_token(data_url):
+    utils.log("Getting Licence token for channel: " + data_url)
+    config.login_check()
 
-        if stream["type"] != "live-streams":
-            continue
+    url = API_ENDPOINT + "/access-rights/resource-auth/channel/" + data_url
+    opener = get_url_opener()
+    response = opener.open(url)
 
-        url = stream["attributes"]["stream-url"] + "&auth_token=app_" + config.get_setting(constants.TOKEN)
+    response_text = response.read()
+    response_code = response.getcode()
 
-        if "_lq.stream" in stream["id"]:
-            stream_links["3-lq"] = url
-        elif "_mq.stream" in stream["id"]:
-            stream_links["2-mq"] = url
-        elif "_hq.stream" in stream["id"]:
-            stream_links["1-hq"] = url
-        elif "_hd.stream" in stream["id"]:
-            stream_links["0-hd"] = url
+    if response_code != 200:
+        config.set_setting_bool(constants.LOGGED_IN, False)
+        raise ApiError(
+            "Got incorrect response code while requesting licence token. Reponse code: " + response_code + ";\nText: " + response_text)
 
-    for key in sorted(stream_links.keys()):
-        streamurl = stream_links[key]
-        break
+    json_object = None
+    try:
+        json_object = json.loads(response_text)
+    except ValueError as e:
+        config.set_setting(constants.LOGGED_IN, False)
+        raise ApiError("Did not receive json, something wrong: " + response_text)
 
-    return streamurl
+    return json_object["token"]
 
 
 def get_epg(date):

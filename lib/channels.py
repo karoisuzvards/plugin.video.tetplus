@@ -46,12 +46,19 @@ def play_channel():
         params = utils.get_url(params_str)
 
         data_url = params['data_url']
-        rtmp_url = api.get_stream_url(data_url)
+        mpd_url = api.get_stream_url(data_url)
 
-        playitem = xbmcgui.ListItem(path=rtmp_url)
-        playitem.setProperty('inputstreamaddon', 'inputstream.adaptive')
-        playitem.setProperty('inputstream.adaptive.manifest_type', 'hls')
+        playitem = xbmcgui.ListItem(path=mpd_url['stream'])
+        licToken = api.get_license_token(data_url)
+        
+        playitem.setMimeType('application/xml+dash')
         playitem.setContentLookup(False)
+        
+        playitem.setProperty('inputstream', 'inputstream.adaptive')
+        playitem.setProperty('inputstream.adaptive.manifest_type', 'mpd')
+        playitem.setProperty('inputstream.adaptive.license_type', 'com.widevine.alpha')
+        playitem.setProperty('inputstream.adaptive.license_key', mpd_url['licUrl']+"|tpar-sc-jwt="+licToken+"|R|R")
+        
         xbmcplugin.setResolvedUrl(handle, True, playitem)
 
     except:
