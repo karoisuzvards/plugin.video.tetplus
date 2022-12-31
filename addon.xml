@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<addon id="lattelecomtv" version="0.5" name="Lattelecom Live TV" provider-name="martinsbalodis">
+<addon id="plugin.video.tetplus-unofficial" version="0.5" name="Tet Plus (unofficial)" provider-name="karoisuzvards,janhouse,martinsbalodis">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0"/>
 		<import addon="pvr.iptvsimple" optional="true"/>
-		<import addon="script.module.inputstreamhelper"/>
 		<import addon="inputstream.adaptive"/>
+		<import addon="script.module.inputstreamhelper"/>
 		<import addon="script.module.pytz"/>
 		<import addon="script.module.requests"/>
 		<import addon="script.module.beautifulsoup4"/>
@@ -14,10 +14,13 @@
 	</extension>
 	<extension point="xbmc.service" library="service.py" start="login"/>
 	<extension point="xbmc.addon.metadata">
-		<summary lang="en_gb">Lattelecom Shortcut.lv Live TV</summary>
-		<description lang="en_gb">Watch Lattelecom live TV from Kodi</description>
+		<summary lang="en_gb">Tet Plus Live TV + Series (unofficial)</summary>
+		<description lang="en_gb">Watch Tet Plus from Kodi</description>
 		<platform>all</platform>
-		<website>https://github.com/martinsbalodis/xbmc-lattelecom.tv</website>
-		<source>https://github.com/martinsbalodis/xbmc-lattelecom.tv</source>
+		<website>https://github.com/karoisuzvards/plugin.video.tetplus</website>
+		<source>https://github.com/karoisuzvards/plugin.video.tetplus</source>
+		<assets>
+        	<icon>resources/icon.png</icon>
+		</assets>
 	</extension>
 </addon>

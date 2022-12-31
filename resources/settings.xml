@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <settings version="1">
-	<section id="lattelecomtv">
+	<section id="plugin.video.tetplus-unofficial-settings">
 		<category id="general" label="general_label" help="general_help">
 			<group id="1" label="TetPlus authentication">
 				<setting label="Username" type="string" id="username" help="Username">
@@ -26,7 +26,7 @@
 				</setting>
 				<setting id="action_clear" type="action" label="Clear authorization token" help="Clear authorization token">
 					<level>0</level>
-					<data>RunScript(lattelecomtv,refresh_token)</data>
+					<data>RunScript(plugin.video.tetplus-unofficial,refresh_token)</data>
 					<control type="button" format="action">
 						<close>true</close>
 					</control>
