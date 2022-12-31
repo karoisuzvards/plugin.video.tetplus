@@ -5,14 +5,14 @@
 		<setting label="Username" type="text" id="username" default=""/>
 		<setting label="Password" type="text" id="password" option="hidden" enable="!eq(-1,)" default=""/>
 		<setting id="action_clear" type="action" label="Clear authorization token"
-		         action="XBMC.RunScript(lattelecomtv,refresh_token)"/>
+		         action="RunScript(plugin.video.tetplus-unofficial,refresh_token)"/>
 		<setting type="bool" id="logged_in" default="false" visible="false"/>
 		<setting type="bool" id="configured" default="false" visible="false"/>
 		<setting id="last_login" type="text" default="1970-01-01 23:59:00.000000" visible="false"/>
 		<setting id="action_configure_epg" type="action" label="Configure PVR IPTVSimple addon automatically"
-		         action="XBMC.RunScript(lattelecomtv,configure_epg)"/>
+		         action="RunScript(plugin.video.tetplus-unofficial,configure_epg)"/>
 		<setting id="action_rebuild_epg" type="action" label="Rebuild EPG data"
-		         action="XBMC.RunScript(lattelecomtv,rebuild_epg)"/>
+		         action="RunScript(plugin.video.tetplus-unofficial,rebuild_epg)"/>
 		<setting id="last_epg" type="text" default="1970-01-01 23:59:00.000000" visible="false"/>
 	</category>
 </settings>

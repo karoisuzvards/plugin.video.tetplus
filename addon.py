@@ -1,6 +1,6 @@
 import sys
 
-from lib import utils, channels, config, constants, epg
+from resources.lib import utils, channels, config, constants, epg
 
 utils.log('Initialised')
 

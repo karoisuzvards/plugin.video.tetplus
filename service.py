@@ -1,6 +1,6 @@
 import xbmc
 
-from lib import api, config, utils, exceptions, epg
+from resources.lib import api, config, utils, exceptions, epg
 
 utils.log("Service started")
 
