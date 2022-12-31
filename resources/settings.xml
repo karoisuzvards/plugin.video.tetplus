@@ -1,18 +1,53 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<settings>
-	<category label="General">
-		<setting label="Lattelecom authentication" type="lsep"/>
-		<setting label="Username" type="text" id="username" default=""/>
-		<setting label="Password" type="text" id="password" option="hidden" enable="!eq(-1,)" default=""/>
-		<setting id="action_clear" type="action" label="Clear authorization token"
-		         action="XBMC.RunScript(lattelecomtv,refresh_token)"/>
-		<setting type="bool" id="logged_in" default="false" visible="false"/>
-		<setting type="bool" id="configured" default="false" visible="false"/>
-		<setting id="last_login" type="text" default="1970-01-01 23:59:00.000000" visible="false"/>
-		<setting id="action_configure_epg" type="action" label="Configure PVR IPTVSimple addon automatically"
-		         action="XBMC.RunScript(lattelecomtv,configure_epg)"/>
-		<setting id="action_rebuild_epg" type="action" label="Rebuild EPG data"
-		         action="XBMC.RunScript(lattelecomtv,rebuild_epg)"/>
-		<setting id="last_epg" type="text" default="1970-01-01 23:59:00.000000" visible="false"/>
-	</category>
+<?xml version="1.0" ?>
+<settings version="1">
+	<section id="lattelecomtv">
+		<category id="general" label="general_label" help="general_help">
+			<group id="1" label="TetPlus authentication">
+				<setting label="Username" type="string" id="username" help="Username">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<control type="edit" format="string">
+						<heading>TetPlus username</heading>
+					</control>
+				</setting>
+				<setting label="Password" type="string" id="password" help="Password">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<control type="edit" format="string">
+						<heading>TetPlus password</heading>
+						<hidden>true</hidden>
+					</control>
+				</setting>
+				<setting id="action_clear" type="action" label="Clear authorization token" help="Clear authorization token">
+					<level>0</level>
+					<data>RunScript(lattelecomtv,refresh_token)</data>
+					<control type="button" format="action">
+						<close>true</close>
+					</control>
+				</setting>
+				
+			</group>
+			<setting type="boolean" id="logged_in" label="logged in" help="Logged in">
+				<level>0</level>
+				<default>false</default>
+				<control type="toggle">
+					<hidden>true</hidden>	
+				</control>
+			</setting>
+			
+			<!-- <setting type="bool" id="configured" default="false" visible="false"/> -->
+			<!-- <setting id="last_login" type="text" default="1970-01-01 23:59:00.000000" visible="false"/> -->
+			<!-- <setting id="action_configure_epg" type="action" label="Configure PVR IPTVSimple addon automatically" -->
+					<!-- action="XBMC.RunScript(lattelecomtv,configure_epg)"/> -->
+			<!-- <setting id="action_rebuild_epg" type="action" label="Rebuild EPG data" -->
+					<!-- action="XBMC.RunScript(lattelecomtv,rebuild_epg)"/> -->
+			<!-- <setting id="last_epg" type="text" default="1970-01-01 23:59:00.000000" visible="false"/> -->
+		</category>
+	</section>
 </settings>
