@@ -1,8 +1,7 @@
 import sys
 
-from resources.lib import utils, channels, config, constants, epg
+from resources.lib import utils
 from urllib.parse import parse_qsl
-import xbmcplugin
 from resources.lib.router import router
 
 utils.log('Initialised')

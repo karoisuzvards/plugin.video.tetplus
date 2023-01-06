@@ -1,9 +1,11 @@
-from resources.lib.constants import SHOW_SERIES,SHOW_LIVE_CHANNELS,PLAY_STREAM,REBUILD_EPG,REFRESH_TOKEN,CONFIGURE_EPG
-from resources.lib.channels import make_channel_list, make_series_list, play_channel
+from resources.lib.constants import *
+from resources.lib.channels import *
 import xbmcgui
 import xbmcplugin
 from . import config 
 from . import epg 
+from . import utils
+
 
 def router(base_url, addon_handle, params):
     """
@@ -22,10 +24,15 @@ def router(base_url, addon_handle, params):
             # Display the list of videos in a provided category.
             make_channel_list()
         elif params['action'] == SHOW_SERIES:
-            # Play a video from a provided URL.
-            make_series_list()
+            make_series_categories_list(base_url, addon_handle, params)
         elif params['action'] == PLAY_STREAM:
             play_channel()
+        elif params['action'] == SHOW_CATEGORY:
+            make_category_series_list(base_url, addon_handle, params)
+        elif params['action'] == SHOW_SERIES_SEASONS:
+            make_series_seasons(base_url, addon_handle, params)
+        elif params["action"] == SHOW_SERIES_SEASON_DETAILS:
+            make_series_episodes(base_url, addon_handle, params)
     else:
         # If the plugin is called from Kodi UI without any parameters,
         # display the list of video categories
