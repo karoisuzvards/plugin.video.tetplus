@@ -8,6 +8,16 @@ from .exceptions import ApiError
 import requests
 from bs4 import BeautifulSoup
 
+# on osmc 2022.11 build need to lower SSL ciphers - as manstv uses some old ones
+import urllib3
+
+requests.packages.urllib3.disable_warnings()
+requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ':HIGH:!DH:!aNULL'
+try:
+    requests.packages.urllib3.contrib.pyopenssl.util.ssl_.DEFAULT_CIPHERS += ':HIGH:!DH:!aNULL'
+except AttributeError:
+    # no pyopenssl support used / needed / available
+    pass
 
 AUTH_API_URL = 'https://connect.tet.lv'
 
@@ -17,7 +27,6 @@ MY_TV_BASE_URL = "https://manstv.lattelecom.tv/"
 API_ENDPOINT = API_BASEURL + "/api"
 
 S = requests.Session()
-
 
 def req_headers():
     return {
