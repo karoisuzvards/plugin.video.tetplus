@@ -24,15 +24,18 @@ Main goal is to make this addon compatible with Kodi Matrix (19.x)
 
 # Features:
 
-* authentication happy path (testing and error handling WIP)
+* authentication happy path
 * live tv playback (using DASH protocol)
+* support for series (navigation, playback)
 
 # Roadmap:
 
-* Addon settings (partially works, UI tweaks required)
-* Support for shows / TV series available on Tet.plus
+* Support for films available on Tet.plus
 * Fix EPG 
-* refactor urllib to requests
+* Watch Later
+* Continue Watching
+* Search movies
+* Authentication error handling
 
 
 ## Usage
@@ -88,7 +91,17 @@ Channel guide overlay
 Addon settings section
 
 ![Alt text](screenshots/settings.png?raw=true "Addon settings in Kodi") -->
+## FAQ
 
+### My device has FullHD support but I get 720p stream
+
+```
+Open InputStream Adaptive addon settings and select General -> Stream Selection -> Manually select video stream and OK
+
+(In case of Linux) - easiest way is to wait Kodi 20 (Nexus) - at this point its RC2 (04.01.2022)
+
+More info: https://github.com/xbmc/inputstream.adaptive/wiki/Stream-selection-types-properties
+```
 ## Development
 
 ### Setup

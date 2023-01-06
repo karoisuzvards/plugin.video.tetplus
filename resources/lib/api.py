@@ -1,6 +1,4 @@
 import json
-import urllib.request, urllib.parse, urllib.error
-import urllib.request, urllib.error, urllib.parse
 from . import config
 from . import utils
 from . import constants
@@ -10,30 +8,27 @@ from .exceptions import ApiError
 import requests
 from bs4 import BeautifulSoup
 
-try:
-    import xbmc, xbmcplugin
-except:
-    pass
 
 AUTH_API_URL = 'https://connect.tet.lv'
 
 API_BASEURL = "https://api-prd.shortcut.lv"
+MY_TV_BASE_URL = "https://manstv.lattelecom.tv/"
+
 API_ENDPOINT = API_BASEURL + "/api"
 
-# TODO: move to requests
-def get_url_opener():
-    opener = urllib.request.build_opener()
-    # Headers from Firefox 107
-    opener.addheaders = [
-        ('User-Agent',
-	'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:107.0) Gecko/20100101 Firefox/108.0'),
-        ('Content-Type', 'application/json'),
-        ('Accept', 'application/json'),
-        ('Authorization', 'Bearer '+ config.get_token()),
-        ('X-Device-ID','{"app":{"name":"Tet+","version":"2022_12_19-14_31_59-d62690b4"},"os":{"name":"Mac","version":"mac-os-x-15"},"browser":{"name":"Firefox","version":"108.0"}}'),
-    ]
-    return opener
+S = requests.Session()
 
+
+def req_headers():
+    return {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'User-Agent': 'Kodi v19 (Matrix) - python3.requests',
+        'Authorization': 'Bearer '+ config.get_token(),
+        'Accept-Encoding': 'gzip, deflate, br',
+        'X-Device-ID': '{"app":{"name":"Tet+","version":"2022_12_19-14_31_59-d62690b4"},"os":{"name":"Kodi","version":"v19.0.4"},"browser":{"name":"Firefox","version":"108.0"}}'
+    }
+    
 
 def login(force=False):
     utils.log("User: " + config.get_username() + "; Logged in: " + str(config.is_logged_in()) + "; Token: " + config.get_token())
@@ -57,7 +52,7 @@ def login(force=False):
         'Accept': "*/*",
     }
 
-    response1 = requests.get(
+    response1 = S.get(
         AUTH_API_URL + '/authorize',
         params=url_params,
         headers=headers,
@@ -76,14 +71,13 @@ def login(force=False):
         'login[_token]': login_token, 
     }
     
-    response = requests.post(
+    response = S.post(
         AUTH_API_URL + '/authorize',
         params=url_params,
         data=form_data,
         headers={
             "Content-Type": "application/x-www-form-urlencoded", 
             "Accept": "*/*",
-            'Cookie': response1.headers["Set-Cookie"],
         }
     )
     
@@ -99,88 +93,150 @@ def login(force=False):
     utils.log("Login success!")
     return True
 
+def get_series_categories():
+    config.login_check()
+    
+    response = S.get(MY_TV_BASE_URL + "api/v1.11/get/content/pages/series_web/?include=items&filter%5Blang%5D=en", headers=req_headers())
+    
+    # TODO: try out decorator
+    if response.status_code != 200:
+        raise ApiError(
+            "Got incorrect response code while requesting categories of series. Response code: %s ;\nText: %s" % (response.status_code, response.text)
+        )
+    
+    categories = []
+    for cat in response.json()["data"]:
+        categories.append(
+            {
+                "id": cat["id"],
+                "title": cat["attributes"]["title"]
+            }
+        )
+    
+    return categories
+
+def get_category_series(params):
+    utils.log("Get category series for "+str(params))
+    response = S.get(
+        MY_TV_BASE_URL + "api/v1.11/get/content/categories/%s?include=items,items.channel&page[number]=%s&filter[lang]=en" % (params["id"], params["page"]),
+        headers=req_headers()
+    )
+     # TODO: try out decorator
+    if response.status_code != 200:
+        raise ApiError(
+            "Got incorrect response code while requesting category series. Response code: %s ;\nText: %s" % (response.status_code, response.text)
+        )
+    
+    series = []
+    for item in response.json()["included"]:
+        series.append({
+            "id": item["attributes"]["series-id"],
+            "title": item["attributes"]["series-name"],
+            "description":  item["attributes"]["description"],
+            "image": "%s/images/vod/%s/poster-large?width=555" % (API_ENDPOINT, item["id"])
+        })
+        
+    return series
+
+def get_series_episodes(series_id, page_size=1000, lang="en"):
+    response = S.get(
+        MY_TV_BASE_URL + "api/v1.11/get/content/episodes/%s?page[size]=%s&filter[lang]=%s" % (series_id, page_size, lang),
+        headers=req_headers()
+    )
+    # TODO: try out decorator
+    if response.status_code != 200:
+        raise ApiError(
+            "Got incorrect response code while requesting channel list. Response code: %s ;\nText: %s" % (response.status_code, response.text)
+        )
+        
+    episodes_per_season = {}    
+    for episode in response.json()["data"]:
+        season_nr = episode["attributes"]["season-nr"]
+        if season_nr in episodes_per_season.keys():
+            episodes_per_season[season_nr].append(_add_episode(episode))
+        else:
+            episodes_per_season[season_nr] = []
+            episodes_per_season[season_nr].append(_add_episode(episode))
+        
+    return episodes_per_season
+
+def _add_episode(episode):
+    return {
+        "id": episode["id"],
+        "image": "%s/images/vod/%s/poster-large?width=555" % (API_ENDPOINT, episode["id"]),
+        "title": episode["attributes"]["episode-name"],
+        "description": episode["attributes"]["description"],
+    }
 
 def get_channels():
     config.login_check()
 
     url = API_ENDPOINT + '/packaging/services?flattenBundles=true'
-    opener = get_url_opener()
-    response = opener.open(url)
-    response_text = response.read()
-    response_code = response.getcode()
+    response = S.get(url, headers=req_headers())
+
+    response_text = response.text
+    response_code = response.status_code
 
     if response_code != 200:
         raise ApiError(
             "Got incorrect response code while requesting channel list. Reponse code: " + response_code + ";\nText: " + response_text)
 
-    json_object = None
-    try:
-        json_object = json.loads(response_text)
-    except ValueError as e:
-        raise ApiError("Did not receive json, something wrong: " + response_text)
-
     channels = []
-    for item in json_object:
+    for item in response.json():
         if "type" not in item or "id" not in item:
             continue
 
         channels.append({
             'id': item["id"],
             'name': item["title"],
+            'image': API_ENDPOINT + "/images/channel/"+str(item['id'])+"/logo/dark?height=200"
         })
 
     return channels
 
 
-def get_stream_url(data_url):
+def get_stream_url(data_url, channel_or_vod):
     utils.log("Getting URL for channel: " + data_url)
     config.login_check()
 
-    url = API_ENDPOINT + "/stream/v2/channel/" + data_url
-    opener = get_url_opener()
-    response = opener.open(url)
+    url = API_ENDPOINT + "/stream/v2/%s/%s" % (channel_or_vod, data_url)
+    
+    response = S.get(url, headers=req_headers())
 
-    response_text = response.read()
-    response_code = response.getcode()
+    response_text = response.text
+    response_code = response.status_code
 
     if response_code != 200:
         config.set_setting_bool(constants.LOGGED_IN, False)
         raise ApiError(
-            "Got incorrect response code while requesting stream info. Reponse code: " + response_code + ";\nText: " + response_text)
+            "Got incorrect response code while requesting stream info. Response code: %s;\nText: %s" % (response_code, response_text)
+        )
 
-    json_object = None
-    try:
-        json_object = json.loads(response_text)
-    except ValueError as e:
-        config.set_setting(constants.LOGGED_IN, False)
-        raise ApiError("Did not receive json, something wrong: " + response_text)
-
+    json_object = response.json()
+    
     return { 'stream': json_object["streams"]["dash"], 'licUrl': json_object["drm"]["com.widevine.alpha"] }
 
-def get_license_token(data_url):
+def get_license_token(data_url, channel_or_vod):
     utils.log("Getting Licence token for channel: " + data_url)
     config.login_check()
+    
+    # because API
+    if channel_or_vod == "vod":
+        channel_or_vod = "svod"
 
-    url = API_ENDPOINT + "/access-rights/resource-auth/channel/" + data_url
-    opener = get_url_opener()
-    response = opener.open(url)
+    url = API_ENDPOINT + "/access-rights/resource-auth/%s/%s" % (channel_or_vod, data_url)
+    response = S.get(url, headers=req_headers())
 
-    response_text = response.read()
-    response_code = response.getcode()
+    response_text = response.text
+    response_code = response.status_code
 
     if response_code != 200:
         config.set_setting_bool(constants.LOGGED_IN, False)
         raise ApiError(
-            "Got incorrect response code while requesting licence token. Reponse code: " + response_code + ";\nText: " + response_text)
+            "Got incorrect response code while requesting licence token. Response code: %s;\nText: %s" % (response_code, response_text)
+        )
 
-    json_object = None
-    try:
-        json_object = json.loads(response_text)
-    except ValueError as e:
-        config.set_setting(constants.LOGGED_IN, False)
-        raise ApiError("Did not receive json, something wrong: " + response_text)
-
-    return json_object["token"]
+    return response.json()["token"]
 
 
 def get_epg(date):
@@ -190,7 +246,7 @@ def get_epg(date):
     timestampTo=int(timestampFrom+86400)
 
     url = API_ENDPOINT + "/get/content/epgs/?include=channel&page[size]=100000&filter[utTo]="+str(timestampTo)+"&filter[utFrom]="+str(timestampFrom)
-    opener = get_url_opener()
+    opener = None
     response = opener.open(url)
 
     response_text = response.read()
