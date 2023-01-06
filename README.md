@@ -26,13 +26,16 @@ Main goal is to make this addon compatible with Kodi Matrix (19.x)
 
 * authentication happy path
 * live tv playback (using DASH protocol)
+* support for series (navigation, playback)
 
 # Roadmap:
 
-* Support for shows / TV series available on Tet.plus
+* Support for films available on Tet.plus
 * Fix EPG 
-* authentication error handling
-* refactor urllib to requests
+* Watch Later
+* Continue Watching
+* Search movies
+* Authentication error handling
 
 
 ## Usage
