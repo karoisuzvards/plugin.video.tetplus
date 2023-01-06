@@ -15,7 +15,7 @@ def make_series_categories_list(base_url, addon_handle, params):
         addon_handle (int): same as Kodi addon sys.argv[1]
         params (dict): url query params
     """
-    utils.log("make-category-list")
+    utils.log("make-series-categories-list")
 
     cats = api.get_series_categories()
     for cat in cats:
@@ -33,15 +33,11 @@ def make_category_series_list(base_url, addon_handle, params):
         addon_handle (int): 
         params (dict):
     """
-    utils.log("make-category-series-list")
-
+    utils.log("make_category_series_list")
     series = api.get_category_series(params)
-    utils.log("Series")
-    utils.log(series)
 
     items = []
     for ser in series:
-        utils.log("Series item "+ser["title"])
         listitem = xbmcgui.ListItem(label=ser["title"])
         listitem.setInfo('video', {'title': ser['title'], "plot": ser["description"]})
         listitem.setArt({"thumb": ser['image']}) 
@@ -84,7 +80,6 @@ def make_series_episodes(base_url, addon_handle, params):
     """
     episodes_per_season = api.get_series_episodes(params["id"])
     
-    utils.log(episodes_per_season)
     items = []
     for e in episodes_per_season[params["season_id"]]:
         listitem = xbmcgui.ListItem(label=e["title"])

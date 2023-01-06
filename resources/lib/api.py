@@ -116,7 +116,7 @@ def get_series_categories():
     return categories
 
 def get_category_series(params):
-    utils.log(params)
+    utils.log("Get category series for "+str(params))
     response = S.get(
         MY_TV_BASE_URL + "api/v1.11/get/content/categories/%s?include=items,items.channel&page[number]=%s&filter[lang]=en" % (params["id"], params["page"]),
         headers=req_headers()
@@ -235,9 +235,6 @@ def get_license_token(data_url, channel_or_vod):
         raise ApiError(
             "Got incorrect response code while requesting licence token. Response code: %s;\nText: %s" % (response_code, response_text)
         )
-    
-    utils.log(response.status_code)
-    utils.log(response.text)
 
     return response.json()["token"]
 
