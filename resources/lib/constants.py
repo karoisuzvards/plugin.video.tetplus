@@ -9,3 +9,7 @@ REFRESH_TOKEN="refresh_token"
 REBUILD_EPG="rebuild_epg"
 CONFIGURE_EPG="configure_epg"
 LAST_EPG="last_epg"
+# navigation
+SHOW_LIVE_CHANNELS="show_live_channels"
+SHOW_SERIES="show_series"
+PLAY_STREAM="play_stream"

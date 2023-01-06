@@ -1,30 +1,27 @@
 import sys
 
 from resources.lib import utils, channels, config, constants, epg
+from urllib.parse import parse_qsl
+import xbmcplugin
+from resources.lib.router import router
 
 utils.log('Initialised')
+
+base_url = sys.argv[0]
+
+# when calling from settings menu - addon handle is string
+try:
+    addon_handle = int(sys.argv[1])
+except ValueError:
+    addon_handle = sys.argv[1]
+    
+# when calling from settings menu - url params not passed
+try:    
+    args = dict(parse_qsl(sys.argv[2][1:]))
+except IndexError:
+    args = {}
 
 if __name__ == "__main__":
     utils.log("got URL: " + "; ".join(sys.argv))
 
-    if sys.argv[1] == constants.REFRESH_TOKEN:
-        config.logout()
-        exit(0)
-
-    elif sys.argv[1] == constants.REBUILD_EPG:
-        epg.build_epg()
-        exit(0)
-
-    elif sys.argv[1] == constants.CONFIGURE_EPG:
-        epg.configure_epg()
-        exit(0)
-
-    params_str = sys.argv[2]
-    params = utils.get_url(params_str)
-
-    if len(params) == 0:
-        channels.make_channel_list()
-    elif "play" in params:
-        channels.play_channel()
-    else:
-        utils.log("Unknown url: " + sys.argv[0])
+    router(base_url, addon_handle, args)
