@@ -8,6 +8,16 @@ from .exceptions import ApiError
 import requests
 from bs4 import BeautifulSoup
 
+# on osmc 2022.11 build need to lower SSL ciphers - as manstv uses some old ones
+import urllib3
+
+requests.packages.urllib3.disable_warnings()
+requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ':HIGH:!DH:!aNULL'
+try:
+    requests.packages.urllib3.contrib.pyopenssl.util.ssl_.DEFAULT_CIPHERS += ':HIGH:!DH:!aNULL'
+except AttributeError:
+    # no pyopenssl support used / needed / available
+    pass
 
 AUTH_API_URL = 'https://connect.tet.lv'
 
@@ -17,7 +27,6 @@ MY_TV_BASE_URL = "https://manstv.lattelecom.tv/"
 API_ENDPOINT = API_BASEURL + "/api"
 
 S = requests.Session()
-
 
 def req_headers():
     return {
@@ -29,6 +38,11 @@ def req_headers():
         'X-Device-ID': '{"app":{"name":"Tet+","version":"2022_12_19-14_31_59-d62690b4"},"os":{"name":"Kodi","version":"v19.0.4"},"browser":{"name":"Firefox","version":"108.0"}}'
     }
     
+def _handle_status_code(response, operation):
+    if response.status_code != 200:
+        raise ApiError(
+            "Got incorrect response code during %s. Reponse code: %s; Text: %s" % (operation, response.status_code, response.text)
+        )
 
 def login(force=False):
     utils.log("User: " + config.get_username() + "; Logged in: " + str(config.is_logged_in()) + "; Token: " + config.get_token())
@@ -81,9 +95,7 @@ def login(force=False):
         }
     )
     
-    if response.status_code != 200:
-        raise ApiError(
-            "Got incorrect response code during login. Reponse code: " + response.status_code + "; Text: " +  response.text)
+    _handle_status_code(response, "login")
 
     token = [param.replace("token=","") for param in response.url.split("&") if param.startswith("token")][0]
     
@@ -98,11 +110,25 @@ def get_series_categories():
     
     response = S.get(MY_TV_BASE_URL + "api/v1.11/get/content/pages/series_web/?include=items&filter%5Blang%5D=en", headers=req_headers())
     
-    # TODO: try out decorator
-    if response.status_code != 200:
-        raise ApiError(
-            "Got incorrect response code while requesting categories of series. Response code: %s ;\nText: %s" % (response.status_code, response.text)
+    _handle_status_code(response, "get series categories")
+    
+    categories = []
+    for cat in response.json()["data"]:
+        categories.append(
+            {
+                "id": cat["id"],
+                "title": cat["attributes"]["title"]
+            }
         )
+    
+    return categories
+
+def get_films_categories():
+    config.login_check()
+    
+    response = S.get(MY_TV_BASE_URL + "api/v1.11/get/content/pages/films_web/?include=items&filter%5Blang%5D=en", headers=req_headers())
+    
+    _handle_status_code(response, "get films categories")
     
     categories = []
     for cat in response.json()["data"]:
@@ -121,11 +147,8 @@ def get_category_series(params):
         MY_TV_BASE_URL + "api/v1.11/get/content/categories/%s?include=items,items.channel&page[number]=%s&filter[lang]=en" % (params["id"], params["page"]),
         headers=req_headers()
     )
-     # TODO: try out decorator
-    if response.status_code != 200:
-        raise ApiError(
-            "Got incorrect response code while requesting category series. Response code: %s ;\nText: %s" % (response.status_code, response.text)
-        )
+    
+    _handle_status_code(response, "get category series")
     
     series = []
     for item in response.json()["included"]:
@@ -138,16 +161,33 @@ def get_category_series(params):
         
     return series
 
+def get_category_films(params):
+    utils.log("Get category series for "+str(params))
+    response = S.get(
+        MY_TV_BASE_URL + "api/v1.11/get/content/categories/%s?include=items,items.channel&page[number]=%s&filter[lang]=en" % (params["id"], params["page"]),
+        headers=req_headers()
+    )
+    
+    _handle_status_code(response, "get category series")
+    
+    series = []
+    for item in response.json()["included"]:
+        series.append({
+            "id": item["id"],
+            "title": item["attributes"]["title-localized"],
+            "description":  item["attributes"]["description"],
+            "image": "%s/images/vod/%s/poster-large?width=555" % (API_ENDPOINT, item["id"])
+        })
+        
+    return series
+
 def get_series_episodes(series_id, page_size=1000, lang="en"):
     response = S.get(
         MY_TV_BASE_URL + "api/v1.11/get/content/episodes/%s?page[size]=%s&filter[lang]=%s" % (series_id, page_size, lang),
         headers=req_headers()
     )
-    # TODO: try out decorator
-    if response.status_code != 200:
-        raise ApiError(
-            "Got incorrect response code while requesting channel list. Response code: %s ;\nText: %s" % (response.status_code, response.text)
-        )
+    
+    _handle_status_code(response, "get series episodes")
         
     episodes_per_season = {}    
     for episode in response.json()["data"]:
@@ -164,7 +204,7 @@ def _add_episode(episode):
     return {
         "id": episode["id"],
         "image": "%s/images/vod/%s/poster-large?width=555" % (API_ENDPOINT, episode["id"]),
-        "title": episode["attributes"]["episode-name"],
+        "title": "S%sE%s - %s" % (episode["attributes"]["season-nr"],episode["attributes"]["episode-nr"],episode["attributes"]["episode-name"]),
         "description": episode["attributes"]["description"],
     }
 
@@ -174,12 +214,7 @@ def get_channels():
     url = API_ENDPOINT + '/packaging/services?flattenBundles=true'
     response = S.get(url, headers=req_headers())
 
-    response_text = response.text
-    response_code = response.status_code
-
-    if response_code != 200:
-        raise ApiError(
-            "Got incorrect response code while requesting channel list. Reponse code: " + response_code + ";\nText: " + response_text)
+    _handle_status_code(response, "get channels")
 
     channels = []
     for item in response.json():
@@ -203,14 +238,7 @@ def get_stream_url(data_url, channel_or_vod):
     
     response = S.get(url, headers=req_headers())
 
-    response_text = response.text
-    response_code = response.status_code
-
-    if response_code != 200:
-        config.set_setting_bool(constants.LOGGED_IN, False)
-        raise ApiError(
-            "Got incorrect response code while requesting stream info. Response code: %s;\nText: %s" % (response_code, response_text)
-        )
+    _handle_status_code(response, "get stream url")
 
     json_object = response.json()
     
@@ -227,14 +255,7 @@ def get_license_token(data_url, channel_or_vod):
     url = API_ENDPOINT + "/access-rights/resource-auth/%s/%s" % (channel_or_vod, data_url)
     response = S.get(url, headers=req_headers())
 
-    response_text = response.text
-    response_code = response.status_code
-
-    if response_code != 200:
-        config.set_setting_bool(constants.LOGGED_IN, False)
-        raise ApiError(
-            "Got incorrect response code while requesting licence token. Response code: %s;\nText: %s" % (response_code, response_text)
-        )
+    _handle_status_code(response, "get license token")
 
     return response.json()["token"]
 

@@ -25,10 +25,14 @@ def router(base_url, addon_handle, params):
             make_channel_list()
         elif params['action'] == SHOW_SERIES:
             make_series_categories_list(base_url, addon_handle, params)
+        elif params['action'] == SHOW_FILMS:
+            make_films_categories_list(base_url, addon_handle, params)
         elif params['action'] == PLAY_STREAM:
             play_channel()
-        elif params['action'] == SHOW_CATEGORY:
+        elif params['action'] == SHOW_SERIES_CATEGORY:
             make_category_series_list(base_url, addon_handle, params)
+        elif params['action'] == SHOW_FILMS_CATEGORY:
+            make_category_films_list(base_url, addon_handle, params)
         elif params['action'] == SHOW_SERIES_SEASONS:
             make_series_seasons(base_url, addon_handle, params)
         elif params["action"] == SHOW_SERIES_SEASON_DETAILS:
@@ -46,6 +50,10 @@ def make_main_menu(base_url, addon_handle):
     series = xbmcgui.ListItem(label="Series")
     series_url = "%s?action=%s" % (base_url, SHOW_SERIES)
     xbmcplugin.addDirectoryItem(handle=int(addon_handle), url=series_url, listitem=series, isFolder=True)
+    
+    films = xbmcgui.ListItem(label="Films")
+    films_url = "%s?action=%s" % (base_url, SHOW_FILMS)
+    xbmcplugin.addDirectoryItem(handle=int(addon_handle), url=films_url, listitem=films, isFolder=True)
     
     xbmcplugin.endOfDirectory(handle=int(addon_handle))
 
