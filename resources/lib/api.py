@@ -1,11 +1,14 @@
 import json
+from datetime import timedelta
 from . import config
 from . import utils
-from . import constants
+import xbmcvfs
+import xbmcaddon
 
 from .exceptions import ApiError
 
 import requests
+from requests_cache import CachedSession
 from bs4 import BeautifulSoup
 
 # on osmc 2022.11 build need to lower SSL ciphers - as manstv uses some old ones
@@ -26,7 +29,15 @@ MY_TV_BASE_URL = "https://manstv.lattelecom.tv/"
 
 API_ENDPOINT = API_BASEURL + "/api"
 
-S = requests.Session()
+S = CachedSession(
+    xbmcvfs.translatePath(xbmcaddon.Addon().getAddonInfo('profile'))+ '/http_cache',
+    cache_control=True,
+    expire_after=timedelta(days=1),
+    allowable_methods=['GET'],
+    allowable_codes=[200],
+    match_headers=True,               
+    stale_if_error=True
+)
 
 def req_headers():
     return {

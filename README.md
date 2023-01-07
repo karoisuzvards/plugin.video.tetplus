@@ -26,8 +26,8 @@ Main goal is to make this addon compatible with Kodi Matrix (19.x)
 
 * authentication happy path
 * live tv playback (using DASH protocol)
-* support for series (navigation, playback)
-* Support for films (navigation, playback)
+* support for series (navigation, playback, pagination)
+* Support for films (navigation, playback, pagination)
 
 # Roadmap:
 
@@ -98,7 +98,7 @@ Addon settings section
 ```
 Open InputStream Adaptive addon settings and select General -> Stream Selection -> Manually select video stream and OK
 
-(In case of Linux) - easiest way is to wait Kodi 20 (Nexus) - at this point its RC2 (04.01.2022)
+(In case of Linux) - copy folder resources/inputstream.adaptive to .kodi/userdata/addon_data - after that you can pick up manually stream from settings
 
 More info: https://github.com/xbmc/inputstream.adaptive/wiki/Stream-selection-types-properties
 ```
