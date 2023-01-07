@@ -20,10 +20,24 @@ def make_series_categories_list(base_url, addon_handle, params):
     cats = api.get_series_categories()
     for cat in cats:
         listitem = xbmcgui.ListItem(label=cat["title"])
-        url = "%s?action=%s&id=%s&page=%s" % (base_url, SHOW_CATEGORY, cat['id'], 1)
+        url = "%s?action=%s&id=%s&page=%s" % (base_url, SHOW_SERIES_CATEGORY, cat['id'], 1)
         xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=listitem, isFolder=True)
         
     xbmcplugin.endOfDirectory(handle=addon_handle)
+
+def make_films_categories_list(base_url, addon_handle, params):
+    """ Creates TetPlus Films category list 
+    """
+    utils.log("make-films-categories-list")
+
+    cats = api.get_films_categories()
+    for cat in cats:
+        listitem = xbmcgui.ListItem(label=cat["title"])
+        url = "%s?action=%s&id=%s&page=%s" % (base_url, SHOW_FILMS_CATEGORY, cat['id'], 1)
+        xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=listitem, isFolder=True)
+        
+    xbmcplugin.endOfDirectory(handle=addon_handle)
+        
 
 def make_category_series_list(base_url, addon_handle, params):
     """Display a list of series having specific category
@@ -48,19 +62,38 @@ def make_category_series_list(base_url, addon_handle, params):
     xbmcplugin.addDirectoryItems(handle=addon_handle, items=items, totalItems=len(items))
     xbmcplugin.endOfDirectory(handle=addon_handle)
 
+def make_category_films_list(base_url, addon_handle, params):
+    """Display a list of films having specific category
+    """
+    utils.log("make_category_films_list")
+    films = api.get_category_films(params)
+
+    items = []
+    for film in films:
+        listitem = xbmcgui.ListItem(label=film["title"])
+        listitem.setInfo('video', {'title': film['title'], "plot": film["description"]})
+        listitem.setArt({"thumb": film['image']})
+        listitem.setProperty('IsPlayable', "true")
+        
+        url = "%s?action=%s&data_url=%s&type=vod" % (base_url, PLAY_STREAM, film['id'])
+        items.append((url, listitem, False))
+        
+    xbmcplugin.addDirectoryItems(handle=addon_handle, items=items, totalItems=len(items))
+    xbmcplugin.endOfDirectory(handle=addon_handle)
+
 def make_series_seasons(base_url, addon_handle, params):
     """Display a list of series seasons to be selected
 
     Args:
         base_url (str): 
         addon_handle (int): 
-        params (dict): having id - series id to fetch episodes for
+        params (dict): id - series id to fetch episodes for
     """
     episodes_per_season = api.get_series_episodes(params["id"])
     
     items = []
     for season in episodes_per_season.keys():
-        listitem = xbmcgui.ListItem(label="Season #%s" % (season))
+        listitem = xbmcgui.ListItem(label="Season %s" % (season))
         url = "%s?action=%s&id=%s&season_id=%s" % (base_url, SHOW_SERIES_SEASON_DETAILS, params["id"], season)
         
         items.append((url, listitem, True))
