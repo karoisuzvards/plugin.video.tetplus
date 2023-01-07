@@ -20,7 +20,6 @@
 		<website>https://github.com/karoisuzvards/plugin.video.tetplus</website>
 		<source>https://github.com/karoisuzvards/plugin.video.tetplus</source>
 		<news>
-		</news>
 		0.3
 		* support for films
 		
@@ -30,6 +29,7 @@
 		0.1
 		* login with Tet plus credentials is supported
 		* Live TV support (uses DASH protocol)
+		</news>
 		<assets>
         	<icon>resources/icon.png</icon>
 		</assets>
