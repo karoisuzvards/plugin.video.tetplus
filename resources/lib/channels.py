@@ -37,7 +37,20 @@ def make_films_categories_list(base_url, addon_handle, params):
         xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=listitem, isFolder=True)
         
     xbmcplugin.endOfDirectory(handle=addon_handle)
-        
+
+def _add_pagination_folder(base_url, params, items, action):
+    """Adds pagination folder as last item in list
+
+    Args:
+        base_url (str): 
+        params (dict): id - id of series or films category
+        items (list): existing item list 
+        action (str): where to navigate?
+    """
+    if len(items) >= ITEMS_PER_PAGE:
+        listitem = xbmcgui.ListItem(label="NEXT PAGE")
+        url = "%s?action=%s&id=%s&page=%s" % (base_url, action, params["id"], str(int(params["page"])+1))
+        items.append((url, listitem, True))
 
 def make_category_series_list(base_url, addon_handle, params):
     """Display a list of series having specific category
@@ -58,7 +71,9 @@ def make_category_series_list(base_url, addon_handle, params):
         
         url = "%s?action=%s&id=%s" % (base_url, SHOW_SERIES_SEASONS, ser['id'])
         items.append((url, listitem, True))
-        
+ 
+    _add_pagination_folder(base_url, params, items, SHOW_SERIES_CATEGORY)
+    
     xbmcplugin.addDirectoryItems(handle=addon_handle, items=items, totalItems=len(items))
     xbmcplugin.endOfDirectory(handle=addon_handle)
 
@@ -77,9 +92,13 @@ def make_category_films_list(base_url, addon_handle, params):
         
         url = "%s?action=%s&data_url=%s&type=vod" % (base_url, PLAY_STREAM, film['id'])
         items.append((url, listitem, False))
+    
+    _add_pagination_folder(base_url, params, items, SHOW_FILMS_CATEGORY)
         
+    xbmcplugin.setContent(handle=addon_handle, content='videos')
     xbmcplugin.addDirectoryItems(handle=addon_handle, items=items, totalItems=len(items))
     xbmcplugin.endOfDirectory(handle=addon_handle)
+
 
 def make_series_seasons(base_url, addon_handle, params):
     """Display a list of series seasons to be selected
@@ -124,7 +143,7 @@ def make_series_episodes(base_url, addon_handle, params):
         
         items.append((url, listitem, False))
     
-    xbmcplugin.setContent(handle=addon_handle, content='episodes')
+    xbmcplugin.setContent(handle=addon_handle, content='videos')
     xbmcplugin.addDirectoryItems(handle=addon_handle, items=items, totalItems=len(items))
     xbmcplugin.endOfDirectory(handle=addon_handle)
 

@@ -6,7 +6,7 @@ import string
 
 import xbmc
 import xbmcaddon
-import xbmcplugin
+import xbmcvfs
 
 from . import api
 from . import constants
@@ -18,7 +18,7 @@ APPID = xbmcaddon.Addon().getAddonInfo("id")
 NAME = xbmcaddon.Addon().getAddonInfo("name")
 VERSION = xbmcaddon.Addon().getAddonInfo("version")
 ICON = xbmcaddon.Addon().getAddonInfo("icon")
-DATADIR=xbmc.translatePath( ADDON.getAddonInfo('profile') )
+DATADIR=xbmcvfs.translatePath( ADDON.getAddonInfo('profile') )
 
 api_version = 383
 

@@ -7,6 +7,7 @@
 		<import addon="script.module.inputstreamhelper"/>
 		<import addon="script.module.pytz"/>
 		<import addon="script.module.requests"/>
+		<import addon="script.module.requests-cache"/>
 		<import addon="script.module.beautifulsoup4"/>
 	</requires>
 	<extension point="xbmc.python.pluginsource" library="addon.py">
@@ -19,7 +20,11 @@
 		<platform>all</platform>
 		<website>https://github.com/karoisuzvards/plugin.video.tetplus</website>
 		<source>https://github.com/karoisuzvards/plugin.video.tetplus</source>
-		<news>0.3
+		<news>
+			0.4
+			* add pagination for series and films
+			* cache requests for 1 day to improve perf
+			0.3
 			* support for films
 			0.2
 			* support for series
