@@ -37,12 +37,18 @@ def router(base_url, addon_handle, params):
             make_series_seasons(base_url, addon_handle, params)
         elif params["action"] == SHOW_SERIES_SEASON_DETAILS:
             make_series_episodes(base_url, addon_handle, params)
+        elif params["action"] == SHOW_CONTINUE_WATCHING:
+            make_continue_watching(base_url, addon_handle, params)
     else:
         # If the plugin is called from Kodi UI without any parameters,
         # display the list of video categories
         make_main_menu(base_url, addon_handle)
 
 def make_main_menu(base_url, addon_handle):
+    continue_watch = xbmcgui.ListItem(label="Continue Watching")
+    continue_watch_url = "%s?action=%s&page=0" % (base_url, SHOW_CONTINUE_WATCHING)
+    xbmcplugin.addDirectoryItem(handle=int(addon_handle), url=continue_watch_url, listitem=continue_watch, isFolder=True)
+    
     movies = xbmcgui.ListItem(label="Live TV")
     movies_url = "%s?action=%s" % (base_url, SHOW_LIVE_CHANNELS)
     xbmcplugin.addDirectoryItem(handle=addon_handle, url=movies_url, listitem=movies, isFolder=True)

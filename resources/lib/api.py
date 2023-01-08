@@ -1,7 +1,9 @@
 import json
 from datetime import timedelta
 from . import config
+from . import constants
 from . import utils
+from functools import reduce
 import xbmcvfs
 import xbmcaddon
 
@@ -29,6 +31,14 @@ MY_TV_BASE_URL = "https://manstv.lattelecom.tv/"
 
 API_ENDPOINT = API_BASEURL + "/api"
 
+def skip_cache_for_following_requests(response):
+    if "user-video-profile/time" in response.request.url:
+        utils.log("Skipping cache for: "+response.request.url)
+        return False
+    
+    utils.log("Caching HTTP req: "+response.request.url)
+    return True
+
 S = CachedSession(
     xbmcvfs.translatePath(xbmcaddon.Addon().getAddonInfo('profile'))+ '/http_cache',
     cache_control=True,
@@ -36,7 +46,8 @@ S = CachedSession(
     allowable_methods=['GET'],
     allowable_codes=[200],
     match_headers=True,               
-    stale_if_error=True
+    stale_if_error=True,
+    filter_fn=skip_cache_for_following_requests
 )
 
 def req_headers():
@@ -50,7 +61,7 @@ def req_headers():
     }
     
 def _handle_status_code(response, operation):
-    if response.status_code != 200:
+    if response.status_code != 200 and response.status_code != 201:
         raise ApiError(
             "Got incorrect response code during %s. Reponse code: %s; Text: %s" % (operation, response.status_code, response.text)
         )
@@ -240,6 +251,51 @@ def get_channels():
 
     return channels
 
+def get_continue_watching(page):
+    config.login_check()
+
+    url = API_ENDPOINT + '/user-video-profile/time'
+    url_params = { "contentType": "vod", "pageIndex": page, "pageSize":"20"}
+    response = S.get(url, headers=req_headers(), params=url_params)
+    
+    _handle_status_code(response, "get continue watching")
+    
+    return list(map(lambda cont: cont["id"], response.json()))
+       
+def get_vod_bulk(list_of_ids):
+    ids_url_params = reduce(lambda acc,id: acc+"id="+str(id)+"&", list_of_ids, "")
+    url = API_ENDPOINT + '/vod/bulk?' + ids_url_params + "lang=en"
+    response = S.get(url, headers=req_headers())
+    
+    _handle_status_code(response, "get vod bulk: "+ids_url_params)
+    
+    vods = []
+    for vod in response.json():
+        if vod["type"] == "series" or vod["type"] == "tv show":
+            vods.append({
+                "type": "series",
+                "id": vod["series"]["id"],
+                "title": vod["series"]["title"],
+                "description": vod["description"] if "description" in vod.keys() else "",
+                "image": "%s/images/vod/%s/poster-large?width=555" % (API_ENDPOINT, vod["id"]),
+            })
+        elif vod["type"] == "movie":
+            vods.append({
+                "type": "movie",
+                "id": vod["id"],
+                "title": vod["title"],
+                "description": vod["description"] if "description" in vod.keys() else "",
+                "image": "%s/images/vod/%s/poster-large?width=555" % (API_ENDPOINT, vod["id"])
+            })
+            
+    return vods
+
+def mark_vod_in_progress(id):
+    url = API_ENDPOINT + "/user-video-profile/time/vod/%s" % (id)
+    payload = { "position": 189 } # TODO: check if vod watch status update be properly implemented
+    response = S.put(url, headers=req_headers(), data=json.dumps(payload))
+    
+    _handle_status_code(response, "mark vod in progress")
 
 def get_stream_url(data_url, channel_or_vod):
     utils.log("Getting URL for channel: " + data_url)

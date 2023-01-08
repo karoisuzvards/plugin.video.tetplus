@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<addon id="plugin.video.tetplus-unofficial" version="0.3" name="Tet Plus (unofficial)" provider-name="karoisuzvards,janhouse,martinsbalodis">
+<addon id="plugin.video.tetplus-unofficial" version="0.5" name="Tet Plus (unofficial)" provider-name="karoisuzvards,janhouse,martinsbalodis">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0"/>
 		<import addon="pvr.iptvsimple" optional="true"/>
@@ -21,6 +21,8 @@
 		<website>https://github.com/karoisuzvards/plugin.video.tetplus</website>
 		<source>https://github.com/karoisuzvards/plugin.video.tetplus</source>
 		<news>
+		    0.5 
+			* add continue watching 
 			0.4
 			* add pagination for series and films
 			* cache requests for 1 day to improve perf
