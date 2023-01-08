@@ -26,14 +26,14 @@ Main goal is to make this addon compatible with Kodi Matrix (19.x)
 
 * authentication happy path
 * live tv playback (using DASH protocol)
-* support for series (navigation, playback, pagination)
+* Support for series (navigation, playback, pagination)
 * Support for films (navigation, playback, pagination)
+* Continue Watching (navigation, playback, pagination)
 
 # Roadmap:
 
 * Fix EPG 
 * Watch Later
-* Continue Watching
 * Search movies
 * Authentication error handling
 

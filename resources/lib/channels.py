@@ -99,7 +99,6 @@ def make_category_films_list(base_url, addon_handle, params):
     xbmcplugin.addDirectoryItems(handle=addon_handle, items=items, totalItems=len(items))
     xbmcplugin.endOfDirectory(handle=addon_handle)
 
-
 def make_series_seasons(base_url, addon_handle, params):
     """Display a list of series seasons to be selected
 
@@ -143,6 +142,32 @@ def make_series_episodes(base_url, addon_handle, params):
         
         items.append((url, listitem, False))
     
+    xbmcplugin.setContent(handle=addon_handle, content='videos')
+    xbmcplugin.addDirectoryItems(handle=addon_handle, items=items, totalItems=len(items))
+    xbmcplugin.endOfDirectory(handle=addon_handle)
+
+def make_continue_watching(base_url, addon_handle, params):
+    utils.log(params["page"])
+    cont_ids = api.get_continue_watching(params["page"])
+    continues = api.get_vod_bulk(cont_ids)
+    items = []
+    for c in continues:
+        if c["type"] == "series":
+            listitem = xbmcgui.ListItem(label=c["title"])
+            listitem.setInfo('video', {'title': c['title'], "plot": c["description"]})
+            listitem.setArt({"thumb": c['image']}) 
+            url = "%s?action=%s&id=%s&type=vod" % (base_url, SHOW_SERIES_SEASONS, c["id"])
+            items.append((url, listitem, True))
+        elif c["type"] == "movie":
+            listitem = xbmcgui.ListItem(label=c["title"])
+            listitem.setInfo('video', {'title': c['title'], "plot": c["description"]})
+            listitem.setArt({"thumb": c['image']}) 
+            listitem.setProperty('IsPlayable', "true")
+            url = "%s?action=%s&data_url=%s&type=vod" % (base_url, PLAY_STREAM, c["id"])
+            items.append((url, listitem, False))
+    
+    _add_pagination_folder(base_url, params, items, SHOW_CONTINUE_WATCHING)
+
     xbmcplugin.setContent(handle=addon_handle, content='videos')
     xbmcplugin.addDirectoryItems(handle=addon_handle, items=items, totalItems=len(items))
     xbmcplugin.endOfDirectory(handle=addon_handle)
@@ -197,7 +222,7 @@ def play_channel():
         playitem.setProperty('inputstream.adaptive.manifest_type', 'mpd')
         playitem.setProperty('inputstream.adaptive.license_type', 'com.widevine.alpha')
         playitem.setProperty('inputstream.adaptive.license_key', stream_info['licUrl']+"|tpar-sc-jwt="+licToken+"|R|R")
-        
+        api.mark_vod_in_progress(params["data_url"])
         xbmcplugin.setResolvedUrl(handle, True, playitem)
 
     except:

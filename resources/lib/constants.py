@@ -19,7 +19,9 @@ SHOW_SERIES_CATEGORY="show_series_category"
 
 SHOW_FILMS="show_films"
 SHOW_FILMS_CATEGORY="show_films_category"
+
 PLAY_STREAM="play_stream"
 
+SHOW_CONTINUE_WATCHING="show_continue_watching"
 # Pagination
 ITEMS_PER_PAGE=20
