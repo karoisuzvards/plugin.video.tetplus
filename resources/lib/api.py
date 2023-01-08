@@ -61,7 +61,7 @@ def req_headers():
     }
     
 def _handle_status_code(response, operation):
-    if response.status_code != 200 and response.status_code != 201:
+    if response.status_code not in range(200,300):
         raise ApiError(
             "Got incorrect response code during %s. Reponse code: %s; Text: %s" % (operation, response.status_code, response.text)
         )
