@@ -50,7 +50,7 @@ S = CachedSession(
     filter_fn=skip_cache_for_following_requests
 )
 
-def req_headers():
+def _req_headers():
     return {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -130,7 +130,7 @@ def login(force=False):
 def get_series_categories():
     config.login_check()
     
-    response = S.get(MY_TV_BASE_URL + "api/v1.11/get/content/pages/series_web/?include=items&filter%5Blang%5D=en", headers=req_headers())
+    response = S.get(MY_TV_BASE_URL + "api/v1.11/get/content/pages/series_web/?include=items&filter%5Blang%5D=en", headers=_req_headers())
     
     _handle_status_code(response, "get series categories")
     
@@ -148,7 +148,7 @@ def get_series_categories():
 def get_films_categories():
     config.login_check()
     
-    response = S.get(MY_TV_BASE_URL + "api/v1.11/get/content/pages/films_web/?include=items&filter%5Blang%5D=en", headers=req_headers())
+    response = S.get(MY_TV_BASE_URL + "api/v1.11/get/content/pages/films_web/?include=items&filter%5Blang%5D=en", headers=_req_headers())
     
     _handle_status_code(response, "get films categories")
     
@@ -167,7 +167,7 @@ def get_category_series(params):
     utils.log("Get category series for "+str(params))
     response = S.get(
         MY_TV_BASE_URL + "api/v1.11/get/content/categories/%s?include=items,items.channel&page[number]=%s&filter[lang]=en" % (params["id"], params["page"]),
-        headers=req_headers()
+        headers=_req_headers()
     )
     
     _handle_status_code(response, "get category series")
@@ -187,7 +187,7 @@ def get_category_films(params):
     utils.log("Get category series for "+str(params))
     response = S.get(
         MY_TV_BASE_URL + "api/v1.11/get/content/categories/%s?include=items,items.channel&page[number]=%s&filter[lang]=en" % (params["id"], params["page"]),
-        headers=req_headers()
+        headers=_req_headers()
     )
     
     _handle_status_code(response, "get category series")
@@ -206,7 +206,7 @@ def get_category_films(params):
 def get_series_episodes(series_id, page_size=1000, lang="en"):
     response = S.get(
         MY_TV_BASE_URL + "api/v1.11/get/content/episodes/%s?page[size]=%s&filter[lang]=%s" % (series_id, page_size, lang),
-        headers=req_headers()
+        headers=_req_headers()
     )
     
     _handle_status_code(response, "get series episodes")
@@ -234,19 +234,20 @@ def get_channels():
     config.login_check()
 
     url = API_ENDPOINT + '/packaging/services?flattenBundles=true'
-    response = S.get(url, headers=req_headers())
+    response = S.get(url, headers=_req_headers())
 
     _handle_status_code(response, "get channels")
 
     channels = []
     for item in response.json():
-        if "type" not in item or "id" not in item:
+        if item["type"] != "tv-channel":
             continue
 
         channels.append({
             'id': item["id"],
             'name': item["title"],
-            'image': API_ENDPOINT + "/images/channel/"+str(item['id'])+"/logo/dark?height=200"
+            'image': API_ENDPOINT + "/images/channel/"+str(item['id'])+"/logo/dark?height=200",
+            "group": (item["group"] if "group" in item else "No Group") 
         })
 
     return channels
@@ -256,7 +257,7 @@ def get_continue_watching(page):
 
     url = API_ENDPOINT + '/user-video-profile/time'
     url_params = { "contentType": "vod", "pageIndex": page, "pageSize":"20"}
-    response = S.get(url, headers=req_headers(), params=url_params)
+    response = S.get(url, headers=_req_headers(), params=url_params)
     
     _handle_status_code(response, "get continue watching")
     
@@ -265,7 +266,7 @@ def get_continue_watching(page):
 def get_vod_bulk(list_of_ids):
     ids_url_params = reduce(lambda acc,id: acc+"id="+str(id)+"&", list_of_ids, "")
     url = API_ENDPOINT + '/vod/bulk?' + ids_url_params + "lang=en"
-    response = S.get(url, headers=req_headers())
+    response = S.get(url, headers=_req_headers())
     
     _handle_status_code(response, "get vod bulk: "+ids_url_params)
     
@@ -275,7 +276,7 @@ def get_vod_bulk(list_of_ids):
             vods.append({
                 "type": "series",
                 "id": vod["series"]["id"],
-                "title": vod["series"]["title"],
+                "title": "%s - S%sE%s" % (vod["series"]["title"], vod["episode"]["seasonNr"], vod["episode"]["seasonNr"]),
                 "description": vod["description"] if "description" in vod.keys() else "",
                 "image": "%s/images/vod/%s/poster-large?width=555" % (API_ENDPOINT, vod["id"]),
             })
@@ -293,7 +294,7 @@ def get_vod_bulk(list_of_ids):
 def mark_vod_in_progress(id):
     url = API_ENDPOINT + "/user-video-profile/time/vod/%s" % (id)
     payload = { "position": 189 } # TODO: check if vod watch status update be properly implemented
-    response = S.put(url, headers=req_headers(), data=json.dumps(payload))
+    response = S.put(url, headers=_req_headers(), data=json.dumps(payload))
     
     _handle_status_code(response, "mark vod in progress")
 
@@ -303,7 +304,7 @@ def get_stream_url(data_url, channel_or_vod):
 
     url = API_ENDPOINT + "/stream/v2/%s/%s" % (channel_or_vod, data_url)
     
-    response = S.get(url, headers=req_headers())
+    response = S.get(url, headers=_req_headers())
 
     _handle_status_code(response, "get stream url")
 
@@ -320,33 +321,25 @@ def get_license_token(data_url, channel_or_vod):
         channel_or_vod = "svod"
 
     url = API_ENDPOINT + "/access-rights/resource-auth/%s/%s" % (channel_or_vod, data_url)
-    response = S.get(url, headers=req_headers())
+    response = S.get(url, headers=_req_headers())
 
     _handle_status_code(response, "get license token")
 
     return response.json()["token"]
 
 
-def get_epg(date):
-    utils.log("Getting EPG for date: " + date)
+def get_epg(timestampFrom,timestampTo ):
+    utils.log("Getting EPG for date: %s - %s" % (timestampFrom,timestampTo))
+    
+    url_params = {
+        "from": timestampFrom,
+        "to": timestampTo,
+        "lang": "en"
+    }
 
-    timestampFrom = utils.unixTSFromDateString(date)
-    timestampTo=int(timestampFrom+86400)
+    url = API_ENDPOINT + "/epg/lv"
+    response = S.get(url, params=url_params, headers=_req_headers())
 
-    url = API_ENDPOINT + "/get/content/epgs/?include=channel&page[size]=100000&filter[utTo]="+str(timestampTo)+"&filter[utFrom]="+str(timestampFrom)
-    opener = None
-    response = opener.open(url)
+    _handle_status_code(response, "get epg")
 
-    response_text = response.read()
-    response_code = response.getcode()
-
-    if response_code != 200:
-        raise ApiError("Got bad response from EPG service. Response code: " + response_code)
-
-    json_object = None
-    try:
-        json_object = json.loads(response_text)
-    except ValueError as e:
-        raise ApiError("Did not receive json, something wrong: " + response_text)
-
-    return json_object
+    return response.json()

@@ -222,7 +222,9 @@ def play_channel():
         playitem.setProperty('inputstream.adaptive.manifest_type', 'mpd')
         playitem.setProperty('inputstream.adaptive.license_type', 'com.widevine.alpha')
         playitem.setProperty('inputstream.adaptive.license_key', stream_info['licUrl']+"|tpar-sc-jwt="+licToken+"|R|R")
-        api.mark_vod_in_progress(params["data_url"])
+        if params["type"] == "vod":
+            api.mark_vod_in_progress(params["data_url"])
+            
         xbmcplugin.setResolvedUrl(handle, True, playitem)
 
     except:
