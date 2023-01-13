@@ -32,7 +32,7 @@ MY_TV_BASE_URL = "https://manstv.lattelecom.tv/"
 API_ENDPOINT = API_BASEURL + "/api"
 
 def skip_cache_for_following_requests(response):
-    if "user-video-profile/time" in response.request.url:
+    if "user-video-profile/time" in response.request.url or "users/profile" in response.request.url:
         utils.log("Skipping cache for: "+response.request.url)
         return False
     
@@ -127,6 +127,10 @@ def login(force=False):
     utils.log("Login success!")
     return True
 
+def get_user_profile():
+    response = S.get(API_ENDPOINT + "/users/profile", params={"lang": "en"}, headers=_req_headers())
+    return response.status_code
+    
 def get_series_categories():
     config.login_check()
     
