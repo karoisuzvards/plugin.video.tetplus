@@ -10,8 +10,6 @@ from . import api
 from . import config
 from . import constants
 from . import utils
-import xbmcaddon
-import xbmcvfs
 
 EPG_FILE = "lattelecom-epg.xml"
 M3U_FILE = "channels.m3u"
@@ -40,18 +38,18 @@ def indent(elem, level=0):
 def should_update():
     t1 = utils.dateFromString(config.get_setting(constants.LAST_EPG))
     t2 = datetime.datetime.now()
-    interval = 6
-    update = abs(t2 - t1) > datetime.timedelta(hours=interval)
-    if update is True:
-        return True
+    return abs(t2 - t1) > datetime.timedelta(days=3)
 
 
 def mark_updated():
+    config.showGuiNotification("EPG updated!")
     utils.log("EPG data updated")
     config.set_setting(constants.LAST_EPG, utils.stringFromDateNow())
 
 
 def build_epg():
+    config.login_check()
+
     utils.log("Building EPG data")
 
     channels = api.get_channels()
@@ -90,7 +88,7 @@ def build_epg():
                                             channel=str(item["id"]))
             ElementTree.SubElement(xml_prog, "title", lang="en").text = epg["title"]
             ElementTree.SubElement(xml_prog, "desc", lang="en").text = (epg["summary"] if "summary" in epg else "")
-            ElementTree.SubElement(xml_prog, "icon", src="%s/images/epg/%s?quality=80&width=280" % (api.API_BASEURL, epg["id"]))
+            ElementTree.SubElement(xml_prog, "icon", src="%s/images/epg/%s/lv?quality=80&width=280" % (api.API_BASEURL, epg["id"]))
 
     indent(xml_tv)
     xml_str = ElementTree.tostring(xml_tv, encoding="utf-8", method="xml").decode("utf-8")
@@ -127,8 +125,8 @@ def configure_epg():
     <setting id="m3uCache" default="true">true</setting>
     <setting id="startNum" default="true">1</setting>
     <setting id="numberByOrder" default="true">false</setting>
-    <setting id="m3uRefreshMode" default="true">0</setting>
-    <setting id="m3uRefreshIntervalMins" default="true">60</setting>
+    <setting id="m3uRefreshMode" default="true">1</setting>
+    <setting id="m3uRefreshIntervalMins" default="true">1</setting>
     <setting id="m3uRefreshHour" default="true">4</setting>
     <setting id="tvGroupMode" default="true">0</setting>
     <setting id="numTvGroups" default="true">1</setting>

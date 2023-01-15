@@ -29,13 +29,14 @@ Main goal is to make this addon compatible with Kodi Matrix (19.x)
 * Support for series (navigation, playback, pagination)
 * Support for films (navigation, playback, pagination)
 * Continue Watching (navigation, playback, pagination)
+* EPG 
 
 # Roadmap:
 
-* Fix EPG 
+* Repository
 * Watch Later
 * Search movies
-* Authentication error handling
+* Error handling
 
 
 ## Usage
@@ -45,7 +46,7 @@ Then install it as .zip file in Kodi addons section.
 
 __Make sure you go to addon settings to input your credentials.__
 
-<!-- ## Requirements for TV section and EPG (BROKEN FOR NOW!)
+## Requirements for TV section and EPG
 
 Addon has listed necessary addons but since not all of them are available in Kodi repository for all platforms, 
 some of them are  marked as optional, more specifically `IPTV Simple` and `Inputstream Adaptive`.
@@ -54,43 +55,31 @@ some of them are  marked as optional, more specifically `IPTV Simple` and `Input
 addon settings and click `Configure PVR IPTVSimple addon automatically` and then `Rebuild EPG data`. After that 
 restart Kodi and it should work.
 
-`Inputstream Adaptive` will make switching between channels almost instant. If stream does not work for some reason, 
-try disabling this addon. -->
+`Inputstream Adaptive` will make switching between channels almost instant. It has also support for DASH protocol and DRM protected streams (not tested if works without) 
 
-<!-- ### Fixing incorrect EPG time offset (BROKEN FOR NOW!)
+## Screenshots
 
-In some cases time zone settings are ignored by Kodi and EPG data is shifted incorrectly. To fix this go to IPTVSimple 
-addon settings, set the correct time shift and then clear EPG databse by going to Kodi `Settings > PVR & Live TV > Guide > Clear data` -->
+TV Series (after opening addon)
 
-<!-- ## Screenshots
+![Alt text](resources/screenshot-1.png "TV series in addon")
 
-Legacy channel list when not using TV view
+Continue watching (after opening addon)
 
-![Alt text](screenshots/list.png?raw=true "Channel list in Kodi")
+![Alt text](screenshots/screenshot-4.png "Continue watching from addon") 
 
 Timeline in TV section
 
-![Alt text](screenshots/timeline.png?raw=true "TV timeline in Kodi")
+![Alt text](resources/screenshot-2.png "TV timeline in Kodi")
 
 Channel view in TV section
 
-![Alt text](screenshots/channels.png?raw=true "Channels in TV section of Kodi")
-
-TV stream with EPG information
-
-![Alt text](screenshots/stream.png?raw=true "Stream view in Kodi")
-
-Channel overlay with EPG information
-
-![Alt text](screenshots/overlay.png?raw=true "Channel overlay in Kodi")
-
-Channel guide overlay
-
-![Alt text](screenshots/guide.png?raw=true "Channel guide overlay in Kodi")
+![Alt text](resources/screenshot-3.png "Channels in TV section of Kodi")
 
 Addon settings section
 
-![Alt text](screenshots/settings.png?raw=true "Addon settings in Kodi") -->
+![Alt text](screenshots/settings.png?raw=true "Addon settings in Kodi") 
+
+
 ## FAQ
 
 ### My device has FullHD support but I get 720p stream
@@ -112,29 +101,3 @@ More info: https://github.com/xbmc/inputstream.adaptive/wiki/Stream-selection-ty
 * create PR against the repo :)
 * PROFIT!
 
-<!-- Use Python 3
-
-`virtualenv -p /usr/bin/python2.7 venv/`
-
-Activate the environment
-
-`source venv/bin/activate`
-
-Install dependencies
-
-```
-pip install mock
-pip install pytz
-pip install Kodistubs
-``` -->
-
-<!-- ### Running tests:
-`python -m unittest discover`
-
-Accepted environment variables:
-
-`TEST_INTERNATIONAL` set this value to skip tests that work only from Lattelecom network. (Useful when running automated tests from Travis)
-
-`TEST_PASSWORD` Shortcut.lv password 
-
-`TEST_USER` Shortcut.lv username -->
