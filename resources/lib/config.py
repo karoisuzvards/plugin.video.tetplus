@@ -89,34 +89,24 @@ def login_check():
         if utils.isEmpty(get_username()) or utils.isEmpty(get_password()):
             showSettingsGui()
             return
-        # Log in and show a status notification
-        try:
-            api.login()
-            showGuiNotification("Login successful")
-        except ApiError as e:
-            showGuiNotification(str(e))
-            utils.log(str(e))
-            pass
+        _login_and_show_notif()
         return
-
-    # TODO: revisit this
-    # Periodically (1 day) force update token because it can expire
-    # t1 = utils.dateFromString(get_setting(constants.LAST_LOGIN))
-    # t2 = datetime.datetime.now()
-    # interval = 1
-    # update = abs(t2 - t1) > datetime.timedelta(days=interval)
-    # if update is True:
-    #     utils.log("Refreshing Lattelecom login token")
-    #     set_setting(constants.LAST_LOGIN, utils.stringFromDateNow())
-    #     try:
-    #         api.login(force=True)
-    #     except ApiError as e:
-    #         showGuiNotification(str(e))
-    #         utils.log(str(e))
-    #         pass
     else:
-        utils.log("Lattelecom login token seems quite fresh.")
+        status_code = api.get_user_profile()
+        if status_code == 401:
+            _login_and_show_notif(True)
+        else:
+            utils.log("Lattelecom login token seems quite fresh.")
 
+def _login_and_show_notif(force=False):
+    # Log in and show a status notification
+    try:
+        api.login(force=force)
+        showGuiNotification("Login successful")
+    except ApiError as e:
+        showGuiNotification(str(e))
+        utils.log(str(e))
+        pass
 
 def logout():
     utils.log("Clearing token")

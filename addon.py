@@ -5,6 +5,7 @@ from urllib.parse import parse_qsl
 from resources.lib.router import router
 
 utils.log('Initialised')
+utils.log("Current version of Python is "+ sys.version)
 
 base_url = sys.argv[0]
 

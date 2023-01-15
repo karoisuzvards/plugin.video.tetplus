@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<addon id="plugin.video.tetplus-unofficial" version="0.5" name="Tet Plus (unofficial)" provider-name="karoisuzvards,janhouse,martinsbalodis">
+<addon id="plugin.video.tetplus-unofficial" version="0.6" name="Tet Plus (unofficial)" provider-name="karoisuzvards,janhouse,martinsbalodis">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0"/>
-		<import addon="pvr.iptvsimple" optional="true"/>
+		<import addon="pvr.iptvsimple"/>
 		<import addon="inputstream.adaptive"/>
 		<import addon="script.module.inputstreamhelper"/>
 		<import addon="script.module.pytz"/>
+		<import addon="script.module.dateutil"/>
 		<import addon="script.module.requests"/>
 		<import addon="script.module.requests-cache"/>
 		<import addon="script.module.beautifulsoup4"/>
@@ -13,7 +14,7 @@
 	<extension point="xbmc.python.pluginsource" library="addon.py">
 		<provides>video</provides>
 	</extension>
-	<extension point="xbmc.service" library="service.py" start="login"/>
+	<extension point="xbmc.service" library="service.py"/>
 	<extension point="xbmc.addon.metadata">
 		<summary lang="en_gb">Tet Plus Live TV + Series (unofficial)</summary>
 		<description lang="en_gb">Watch Tet Plus from Kodi</description>
@@ -21,21 +22,32 @@
 		<website>https://github.com/karoisuzvards/plugin.video.tetplus</website>
 		<source>https://github.com/karoisuzvards/plugin.video.tetplus</source>
 		<news>
-		    0.5 
-			* add continue watching 
-			0.4
-			* add pagination for series and films
-			* cache requests for 1 day to improve perf
-			0.3
-			* support for films
-			0.2
-			* support for series
-			0.1
-			* login with Tet plus credentials is supported
-			* Live TV support (uses DASH protocol)
+0.6
+* reintroduce EPG support
+* To use kodi native TV tab - install addon IPTV Simple PVR
+* Then navigate to Tet Plus settings and "Rebuild EPG" 
+* Then from settings "Configure PVR IPTVSimple addon automatically"
+* And then reboot Kodi. 
+* Check Kodi TV tab
+0.5 
+* add continue watching 
+0.4
+* add pagination for series and films
+* cache requests for 1 day to improve perf
+0.3
+* support for films
+0.2
+* support for series
+0.1
+* login with Tet plus credentials is supported
+* Live TV support (uses DASH protocol)
 		</news>
 		<assets>
         	<icon>resources/icon.png</icon>
+			<screenshot>resources/screenshot-1.png</screenshot>
+			<screenshot>resources/screenshot-2.png</screenshot>
+			<screenshot>resources/screenshot-3.png</screenshot>
+			<screenshot>resources/screenshot-4.png</screenshot>
 		</assets>
 	</extension>
 </addon>
