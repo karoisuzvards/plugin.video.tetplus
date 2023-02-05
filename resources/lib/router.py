@@ -28,7 +28,7 @@ def router(base_url, addon_handle, params):
         elif params['action'] == SHOW_FILMS:
             make_films_categories_list(base_url, addon_handle, params)
         elif params['action'] == PLAY_STREAM:
-            play_channel()
+            play_channel(base_url, addon_handle, params)
         elif params['action'] == SHOW_SERIES_CATEGORY:
             make_category_series_list(base_url, addon_handle, params)
         elif params['action'] == SHOW_FILMS_CATEGORY:

@@ -146,6 +146,10 @@ def make_series_episodes(base_url, addon_handle, params):
     xbmcplugin.addDirectoryItems(handle=addon_handle, items=items, totalItems=len(items))
     xbmcplugin.endOfDirectory(handle=addon_handle)
 
+# Ruby has Hash#except, another example that Ruby is superior 
+def _without_keys(d, exclude_keys):
+    return {k: d[k] for k in set(list(d.keys())) - set(exclude_keys)}
+
 def make_continue_watching(base_url, addon_handle, params):
     utils.log(params["page"])
     cont_ids = api.get_continue_watching(params["page"])
@@ -154,13 +158,13 @@ def make_continue_watching(base_url, addon_handle, params):
     for c in continues:
         if c["type"] == "series":
             listitem = xbmcgui.ListItem(label=c["title"])
-            listitem.setInfo('video', {'title': c['title'], "plot": c["description"]})
+            listitem.setInfo('video', _without_keys(c,["id","image","type"]))
             listitem.setArt({"thumb": c['image']}) 
             url = "%s?action=%s&id=%s&type=vod" % (base_url, SHOW_SERIES_SEASONS, c["id"])
             items.append((url, listitem, True))
         elif c["type"] == "movie":
             listitem = xbmcgui.ListItem(label=c["title"])
-            listitem.setInfo('video', {'title': c['title'], "plot": c["description"]})
+            listitem.setInfo('video', _without_keys(c,["id","image","type"]))
             listitem.setArt({"thumb": c['image']}) 
             listitem.setProperty('IsPlayable', "true")
             url = "%s?action=%s&data_url=%s&type=vod" % (base_url, PLAY_STREAM, c["id"])
@@ -201,14 +205,10 @@ def make_channel_list():
         utils.log_error()
   
 
-def play_channel():
-    utils.log("url play channel: " + sys.argv[0])
+def play_channel(base_url, addon_handle, params):
+    utils.log("url play channel: " + base_url)
 
     try:
-        handle = int(sys.argv[1])
-        params_str = sys.argv[2]
-        params = utils.get_url(params_str)
-
         data_url = params['data_url']
         stream_info = api.get_stream_url(data_url, params["type"])
 
@@ -225,7 +225,7 @@ def play_channel():
         if params["type"] == "vod":
             api.mark_vod_in_progress(params["data_url"])
             
-        xbmcplugin.setResolvedUrl(handle, True, playitem)
+        xbmcplugin.setResolvedUrl(addon_handle, True, playitem)
 
     except:
         d = xbmcgui.Dialog()

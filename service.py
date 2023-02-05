@@ -12,3 +12,5 @@ if __name__ == '__main__':
             break
         if epg.should_update():
             epg.build_epg()
+        if config.auth_token_should_update():
+            config.login_and_show_notif(force=True)

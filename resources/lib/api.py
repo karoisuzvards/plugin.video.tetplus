@@ -227,11 +227,21 @@ def get_series_episodes(series_id, page_size=1000, lang="en"):
     return episodes_per_season
 
 def _add_episode(episode):
+    episode_attrs = episode["attributes"]
     return {
         "id": episode["id"],
         "image": "%s/images/vod/%s/poster-large?width=555" % (API_ENDPOINT, episode["id"]),
-        "title": "S%sE%s - %s" % (episode["attributes"]["season-nr"],episode["attributes"]["episode-nr"],episode["attributes"]["episode-name"]),
-        "description": episode["attributes"]["description"],
+        "title": "S%sE%s - %s" % (episode_attrs["season-nr"], episode_attrs["episode-nr"], episode_attrs["episode-name"]),
+        "plot": episode_attrs["description"],
+        "year": episode_attrs["year"],
+        "genre": episode_attrs["genres"],
+        "cast": episode_attrs["actors"] if "actors" in episode_attrs.keys() else [],
+        "director": episode_attrs["directors"] if "directors" in episode_attrs.keys() else [],
+        "rating": episode_attrs["imdbRating"] if "imdbRating" in episode_attrs.keys() else 0.0,
+        "season": episode_attrs["seasonNr"],
+        "episode": episode_attrs["episodeNr"],
+        "duration": episode_attrs["duration"],
+        "imdbnumber": episode_attrs["imdbLink"] if "imdbLink" in episode_attrs.keys() else ""
     }
 
 def get_channels():
@@ -280,17 +290,33 @@ def get_vod_bulk(list_of_ids):
             vods.append({
                 "type": "series",
                 "id": vod["series"]["id"],
-                "title": "%s - S%sE%s" % (vod["series"]["title"], vod["episode"]["seasonNr"], vod["episode"]["seasonNr"]),
-                "description": vod["description"] if "description" in vod.keys() else "",
+                "title": vod["title"],
+                "plot": vod["description"] if "description" in vod.keys() else "",
                 "image": "%s/images/vod/%s/poster-large?width=555" % (API_ENDPOINT, vod["id"]),
+                "year": vod["year"],
+                "genre": vod["genres"],
+                "cast": vod["actors"] if "actors" in vod.keys() else [],
+                "director": vod["directors"] if "directors" in vod.keys() else [],
+                "rating": vod["imdbRating"] if "imdbRating" in vod.keys() else 0.0,
+                "season": vod["episode"]["seasonNr"],
+                "episode": vod["episode"]["episodeNr"],
+                "duration": vod["duration"],
+                "imdbnumber": vod["imdbLink"] if "imdbLink" in vod.keys() else ""
             })
         elif vod["type"] == "movie":
             vods.append({
                 "type": "movie",
                 "id": vod["id"],
                 "title": vod["title"],
-                "description": vod["description"] if "description" in vod.keys() else "",
-                "image": "%s/images/vod/%s/poster-large?width=555" % (API_ENDPOINT, vod["id"])
+                "plot": vod["description"] if "description" in vod.keys() else "",
+                "image": "%s/images/vod/%s/poster-large?width=555" % (API_ENDPOINT, vod["id"]),
+                "year": vod["year"],
+                "genre": vod["genres"],
+                "cast": vod["actors"] if "actors" in vod.keys() else [],
+                "director": vod["directors"] if "directors" in vod.keys() else [],
+                "rating": vod["imdbRating"] if "imdbRating" in vod.keys() else 0.0,
+                "imdbnumber": vod["imdbLink"] if "imdbLink" in vod.keys() else "",
+                "duration": vod["duration"]
             })
             
     return vods
