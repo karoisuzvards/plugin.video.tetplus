@@ -39,16 +39,16 @@ def skip_cache_for_following_requests(response):
     utils.log("Caching HTTP req: "+response.request.url)
     return True
 
-S = CachedSession(
-    xbmcvfs.translatePath(xbmcaddon.Addon().getAddonInfo('profile'))+ '/http_cache',
-    cache_control=True,
-    expire_after=timedelta(days=1),
-    allowable_methods=['GET'],
-    allowable_codes=[200],
-    match_headers=True,               
-    stale_if_error=True,
-    filter_fn=skip_cache_for_following_requests
-)
+def cached_session():
+    return CachedSession(xbmcvfs.translatePath(xbmcaddon.Addon().getAddonInfo('profile'))+ '/http_cache',
+        cache_control=True,
+        expire_after=timedelta(days=1),
+        allowable_methods=['GET'],
+        allowable_codes=[200],
+        match_headers=True,               
+        stale_if_error=True,
+        filter_fn=skip_cache_for_following_requests
+    )
 
 def _req_headers():
     return {
@@ -88,7 +88,7 @@ def login(force=False):
         'Accept': "*/*",
     }
 
-    response1 = S.get(
+    response1 = cached_session().get(
         AUTH_API_URL + '/authorize',
         params=url_params,
         headers=headers,
@@ -107,7 +107,7 @@ def login(force=False):
         'login[_token]': login_token, 
     }
     
-    response = S.post(
+    response = cached_session().post(
         AUTH_API_URL + '/authorize',
         params=url_params,
         data=form_data,
@@ -128,13 +128,13 @@ def login(force=False):
     return True
 
 def get_user_profile():
-    response = S.get(API_ENDPOINT + "/users/profile", params={"lang": "en"}, headers=_req_headers())
+    response = cached_session().get(API_ENDPOINT + "/users/profile", params={"lang": "en"}, headers=_req_headers())
     return response.status_code
     
 def get_series_categories():
     config.login_check()
     
-    response = S.get(MY_TV_BASE_URL + "api/v1.11/get/content/pages/series_web/?include=items&filter%5Blang%5D=en", headers=_req_headers())
+    response = cached_session().get(MY_TV_BASE_URL + "api/v1.11/get/content/pages/series_web/?include=items&filter%5Blang%5D=en", headers=_req_headers())
     
     _handle_status_code(response, "get series categories")
     
@@ -152,7 +152,7 @@ def get_series_categories():
 def get_films_categories():
     config.login_check()
     
-    response = S.get(MY_TV_BASE_URL + "api/v1.11/get/content/pages/films_web/?include=items&filter%5Blang%5D=en", headers=_req_headers())
+    response = cached_session().get(MY_TV_BASE_URL + "api/v1.11/get/content/pages/films_web/?include=items&filter%5Blang%5D=en", headers=_req_headers())
     
     _handle_status_code(response, "get films categories")
     
@@ -169,7 +169,7 @@ def get_films_categories():
 
 def get_category_series(params):
     utils.log("Get category series for "+str(params))
-    response = S.get(
+    response = cached_session().get(
         MY_TV_BASE_URL + "api/v1.11/get/content/categories/%s?include=items,items.channel&page[number]=%s&filter[lang]=en" % (params["id"], params["page"]),
         headers=_req_headers()
     )
@@ -189,7 +189,7 @@ def get_category_series(params):
 
 def get_category_films(params):
     utils.log("Get category series for "+str(params))
-    response = S.get(
+    response = cached_session().get(
         MY_TV_BASE_URL + "api/v1.11/get/content/categories/%s?include=items,items.channel&page[number]=%s&filter[lang]=en" % (params["id"], params["page"]),
         headers=_req_headers()
     )
@@ -208,7 +208,7 @@ def get_category_films(params):
     return series
 
 def get_series_episodes(series_id, page_size=1000, lang="en"):
-    response = S.get(
+    response = cached_session().get(
         MY_TV_BASE_URL + "api/v1.11/get/content/episodes/%s?page[size]=%s&filter[lang]=%s" % (series_id, page_size, lang),
         headers=_req_headers()
     )
@@ -248,7 +248,7 @@ def get_channels():
     config.login_check()
 
     url = API_ENDPOINT + '/packaging/services?flattenBundles=true'
-    response = S.get(url, headers=_req_headers())
+    response = cached_session().get(url, headers=_req_headers())
 
     _handle_status_code(response, "get channels")
 
@@ -271,7 +271,7 @@ def get_continue_watching(page):
 
     url = API_ENDPOINT + '/user-video-profile/time'
     url_params = { "contentType": "vod", "pageIndex": page, "pageSize":"20"}
-    response = S.get(url, headers=_req_headers(), params=url_params)
+    response = cached_session().get(url, headers=_req_headers(), params=url_params)
     
     _handle_status_code(response, "get continue watching")
     
@@ -280,7 +280,7 @@ def get_continue_watching(page):
 def get_vod_bulk(list_of_ids):
     ids_url_params = reduce(lambda acc,id: acc+"id="+str(id)+"&", list_of_ids, "")
     url = API_ENDPOINT + '/vod/bulk?' + ids_url_params + "lang=en"
-    response = S.get(url, headers=_req_headers())
+    response = cached_session().get(url, headers=_req_headers())
     
     _handle_status_code(response, "get vod bulk: "+ids_url_params)
     
@@ -324,7 +324,7 @@ def get_vod_bulk(list_of_ids):
 def mark_vod_in_progress(id):
     url = API_ENDPOINT + "/user-video-profile/time/vod/%s" % (id)
     payload = { "position": 189 } # TODO: check if vod watch status update be properly implemented
-    response = S.put(url, headers=_req_headers(), data=json.dumps(payload))
+    response = cached_session().put(url, headers=_req_headers(), data=json.dumps(payload))
     
     _handle_status_code(response, "mark vod in progress")
 
@@ -334,7 +334,7 @@ def get_stream_url(data_url, channel_or_vod):
 
     url = API_ENDPOINT + "/stream/v2/%s/%s" % (channel_or_vod, data_url)
     
-    response = S.get(url, headers=_req_headers())
+    response = cached_session().get(url, headers=_req_headers())
 
     _handle_status_code(response, "get stream url")
 
@@ -351,7 +351,7 @@ def get_license_token(data_url, channel_or_vod):
         channel_or_vod = "svod"
 
     url = API_ENDPOINT + "/access-rights/resource-auth/%s/%s" % (channel_or_vod, data_url)
-    response = S.get(url, headers=_req_headers())
+    response = cached_session().get(url, headers=_req_headers())
 
     _handle_status_code(response, "get license token")
 
@@ -368,7 +368,7 @@ def get_epg(timestampFrom,timestampTo ):
     }
 
     url = API_ENDPOINT + "/epg/lv"
-    response = S.get(url, params=url_params, headers=_req_headers())
+    response = cached_session().get(url, params=url_params, headers=_req_headers())
 
     _handle_status_code(response, "get epg")
 
