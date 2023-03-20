@@ -134,7 +134,7 @@ def make_series_episodes(base_url, addon_handle, params):
     items = []
     for e in episodes_per_season[params["season_id"]]:
         listitem = xbmcgui.ListItem(label=e["title"])
-        listitem.setInfo('video', {'title': e['title'], "plot": e["description"]})
+        listitem.setInfo('video', _without_keys(e, ["id","image","type"]))
         listitem.setArt({"thumb": e['image']}) 
         listitem.setProperty('IsPlayable', "true")
 
@@ -142,7 +142,7 @@ def make_series_episodes(base_url, addon_handle, params):
         
         items.append((url, listitem, False))
     
-    xbmcplugin.setContent(handle=addon_handle, content='videos')
+    xbmcplugin.setContent(handle=addon_handle, content='episodes')
     xbmcplugin.addDirectoryItems(handle=addon_handle, items=items, totalItems=len(items))
     xbmcplugin.endOfDirectory(handle=addon_handle)
 

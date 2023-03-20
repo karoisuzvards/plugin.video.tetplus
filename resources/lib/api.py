@@ -61,7 +61,9 @@ def _req_headers():
     }
     
 def _handle_status_code(response, operation):
-    if response.status_code not in range(200,300):
+    if response.status_code == 401:
+        config.logout()
+    elif response.status_code not in range(200,300):
         raise ApiError(
             "Got incorrect response code during %s. Reponse code: %s; Text: %s" % (operation, response.status_code, response.text)
         )
@@ -238,9 +240,9 @@ def _add_episode(episode):
         "cast": episode_attrs["actors"] if "actors" in episode_attrs.keys() else [],
         "director": episode_attrs["directors"] if "directors" in episode_attrs.keys() else [],
         "rating": episode_attrs["imdbRating"] if "imdbRating" in episode_attrs.keys() else 0.0,
-        "season": episode_attrs["seasonNr"],
-        "episode": episode_attrs["episodeNr"],
-        "duration": episode_attrs["duration"],
+        "season": episode_attrs["season-nr"],
+        "episode": episode_attrs["episode-nr"],
+        "duration": episode_attrs["content-stop-time"] if "content-stop-time" in episode_attrs.keys() else "",
         "imdbnumber": episode_attrs["imdbLink"] if "imdbLink" in episode_attrs.keys() else ""
     }
 
@@ -298,8 +300,8 @@ def get_vod_bulk(list_of_ids):
                 "cast": vod["actors"] if "actors" in vod.keys() else [],
                 "director": vod["directors"] if "directors" in vod.keys() else [],
                 "rating": vod["imdbRating"] if "imdbRating" in vod.keys() else 0.0,
-                "season": vod["episode"]["seasonNr"],
-                "episode": vod["episode"]["episodeNr"],
+                "season": vod["episode"]["season-nr"],
+                "episode": vod["episode"]["episode-nr"],
                 "duration": vod["duration"],
                 "imdbnumber": vod["imdbLink"] if "imdbLink" in vod.keys() else ""
             })
