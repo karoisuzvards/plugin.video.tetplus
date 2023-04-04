@@ -85,8 +85,8 @@ def make_category_films_list(base_url, addon_handle, params):
 
     items = []
     for film in films:
-        listitem = xbmcgui.ListItem(label=film["title"])
-        listitem.setInfo('video', {'title': film['title'], "plot": film["description"]})
+        listitem = xbmcgui.ListItem(label="%s (IMDB: %s)" % (film["title"], film["rating"]))
+        listitem.setInfo('video', _without_keys(film, ["id","image","type"]))
         listitem.setArt({"thumb": film['image']})
         listitem.setProperty('IsPlayable', "true")
         
@@ -133,7 +133,7 @@ def make_series_episodes(base_url, addon_handle, params):
     
     items = []
     for e in episodes_per_season[params["season_id"]]:
-        listitem = xbmcgui.ListItem(label=e["title"])
+        listitem = xbmcgui.ListItem(label=e["title"]+" "+e["rating"])
         listitem.setInfo('video', _without_keys(e, ["id","image","type"]))
         listitem.setArt({"thumb": e['image']}) 
         listitem.setProperty('IsPlayable', "true")

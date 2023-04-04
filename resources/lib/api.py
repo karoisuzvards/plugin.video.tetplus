@@ -31,24 +31,35 @@ MY_TV_BASE_URL = "https://manstv.lattelecom.tv/"
 
 API_ENDPOINT = API_BASEURL + "/api"
 
+API_ENDPOINTS_NOT_TO_CACHE = ["user-video-profile/time", "users/profile", "authorize" ]
+
+def should_not_cache_request(req_url):
+    return any(url in req_url for url in API_ENDPOINTS_NOT_TO_CACHE)
+
 def skip_cache_for_following_requests(response):
-    if "user-video-profile/time" in response.request.url or "users/profile" in response.request.url:
+    if should_not_cache_request(response.request.url):
         utils.log("Skipping cache for: "+response.request.url)
         return False
     
     utils.log("Caching HTTP req: "+response.request.url)
     return True
 
+# lazy init and memoize - otherwise crash on startup
+GLOBAL_SESSION = None
+
 def cached_session():
-    return CachedSession(xbmcvfs.translatePath(xbmcaddon.Addon().getAddonInfo('profile'))+ '/http_cache',
-        cache_control=True,
-        expire_after=timedelta(days=1),
-        allowable_methods=['GET'],
-        allowable_codes=[200],
-        match_headers=True,               
-        stale_if_error=True,
-        filter_fn=skip_cache_for_following_requests
-    )
+    global GLOBAL_SESSION
+    if GLOBAL_SESSION is None:
+        GLOBAL_SESSION = CachedSession(xbmcvfs.translatePath(xbmcaddon.Addon().getAddonInfo('profile'))+ '/http_cache',
+            cache_control=True,
+            expire_after=timedelta(days=1),
+            allowable_methods=['GET'],
+            allowable_codes=[200],
+            match_headers=False,               
+            stale_if_error=False,
+            filter_fn=skip_cache_for_following_requests
+        )
+    return GLOBAL_SESSION
 
 def _req_headers():
     return {
@@ -77,13 +88,15 @@ def login(force=False):
 
     # Step 1. Issue a get request to get magic JWT token from login form 
     
+    cached_session().cache.clear()
+    
     secret_key = config.get_secret_key()
         
     url_params = {
         'lang': 'lv',
         'response_type': 'code',
         'client_id': 'shortcut',
-        'state': '{"redirectUri":"https://tet.plus/login","secretKey":"'+secret_key+'"}',
+        'state': '{"redirectUri":"https://tet.plus/login","secretKey":'+secret_key+'}',
         'redirect_uri': 'https://api-prd.shortcut.lv/api/users/connect/mtet/callback'
     }
     headers = {
@@ -116,9 +129,9 @@ def login(force=False):
         headers={
             "Content-Type": "application/x-www-form-urlencoded", 
             "Accept": "*/*",
-        }
+        } 
     )
-    
+
     _handle_status_code(response, "login")
 
     token = [param.replace("token=","") for param in response.url.split("&") if param.startswith("token")][0]
@@ -203,8 +216,15 @@ def get_category_films(params):
         series.append({
             "id": item["id"],
             "title": item["attributes"]["title-localized"],
-            "description":  item["attributes"]["description"],
-            "image": "%s/images/vod/%s/poster-large?width=555" % (API_ENDPOINT, item["id"])
+            "plot":  item["attributes"]["description"],
+            "image": "%s/images/vod/%s/poster-large?width=555" % (API_ENDPOINT, item["id"]),
+            "rating": float(item["attributes"]["imdb-rating"]) if "imdb-rating" in item["attributes"].keys() else 0.0,
+            "duration": int(item["attributes"]["length"]) * 60,
+            "genres": item["attributes"]["genres"],
+            "year": item["attributes"]["year"],
+            "director": item["attributes"]["directors"],
+            "cast": item["attributes"]["actors"],
+            "mediatype": "movie"
         })
         
     return series
@@ -239,7 +259,7 @@ def _add_episode(episode):
         "genre": episode_attrs["genres"],
         "cast": episode_attrs["actors"] if "actors" in episode_attrs.keys() else [],
         "director": episode_attrs["directors"] if "directors" in episode_attrs.keys() else [],
-        "rating": episode_attrs["imdbRating"] if "imdbRating" in episode_attrs.keys() else 0.0,
+        "rating": "(%s)" % episode_attrs["imdbRating"] if "imdbRating" in episode_attrs.keys() else "",
         "season": episode_attrs["season-nr"],
         "episode": episode_attrs["episode-nr"],
         "duration": episode_attrs["content-stop-time"] if "content-stop-time" in episode_attrs.keys() else "",
@@ -300,9 +320,9 @@ def get_vod_bulk(list_of_ids):
                 "cast": vod["actors"] if "actors" in vod.keys() else [],
                 "director": vod["directors"] if "directors" in vod.keys() else [],
                 "rating": vod["imdbRating"] if "imdbRating" in vod.keys() else 0.0,
-                "season": vod["episode"]["season-nr"],
-                "episode": vod["episode"]["episode-nr"],
-                "duration": vod["duration"],
+                "season": vod["episode"]["seasonNr"],
+                "episode": vod["episode"]["episodeNr"],
+                "duration": vod["duration"] * 60,
                 "imdbnumber": vod["imdbLink"] if "imdbLink" in vod.keys() else ""
             })
         elif vod["type"] == "movie":
