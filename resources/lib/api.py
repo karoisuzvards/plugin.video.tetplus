@@ -31,24 +31,35 @@ MY_TV_BASE_URL = "https://manstv.lattelecom.tv/"
 
 API_ENDPOINT = API_BASEURL + "/api"
 
+API_ENDPOINTS_NOT_TO_CACHE = ["user-video-profile/time", "users/profile", "authorize" ]
+
+def should_not_cache_request(req_url):
+    return any(url in req_url for url in API_ENDPOINTS_NOT_TO_CACHE)
+
 def skip_cache_for_following_requests(response):
-    if "user-video-profile/time" in response.request.url or "users/profile" in response.request.url:
+    if should_not_cache_request(response.request.url):
         utils.log("Skipping cache for: "+response.request.url)
         return False
     
     utils.log("Caching HTTP req: "+response.request.url)
     return True
 
-S = CachedSession(
-    xbmcvfs.translatePath(xbmcaddon.Addon().getAddonInfo('profile'))+ '/http_cache',
-    cache_control=True,
-    expire_after=timedelta(days=1),
-    allowable_methods=['GET'],
-    allowable_codes=[200],
-    match_headers=True,               
-    stale_if_error=True,
-    filter_fn=skip_cache_for_following_requests
-)
+# lazy init and memoize - otherwise crash on startup
+GLOBAL_SESSION = None
+
+def cached_session():
+    global GLOBAL_SESSION
+    if GLOBAL_SESSION is None:
+        GLOBAL_SESSION = CachedSession(xbmcvfs.translatePath(xbmcaddon.Addon().getAddonInfo('profile'))+ '/http_cache',
+            cache_control=True,
+            expire_after=timedelta(days=1),
+            allowable_methods=['GET'],
+            allowable_codes=[200],
+            match_headers=False,               
+            stale_if_error=False,
+            filter_fn=skip_cache_for_following_requests
+        )
+    return GLOBAL_SESSION
 
 def _req_headers():
     return {
@@ -61,7 +72,9 @@ def _req_headers():
     }
     
 def _handle_status_code(response, operation):
-    if response.status_code not in range(200,300):
+    if response.status_code == 401:
+        config.logout()
+    elif response.status_code not in range(200,300):
         raise ApiError(
             "Got incorrect response code during %s. Reponse code: %s; Text: %s" % (operation, response.status_code, response.text)
         )
@@ -75,20 +88,22 @@ def login(force=False):
 
     # Step 1. Issue a get request to get magic JWT token from login form 
     
+    cached_session().cache.clear()
+    
     secret_key = config.get_secret_key()
         
     url_params = {
         'lang': 'lv',
         'response_type': 'code',
         'client_id': 'shortcut',
-        'state': '{"redirectUri":"https://tet.plus/login","secretKey":"'+secret_key+'"}',
+        'state': '{"redirectUri":"https://tet.plus/login","secretKey":'+secret_key+'}',
         'redirect_uri': 'https://api-prd.shortcut.lv/api/users/connect/mtet/callback'
     }
     headers = {
         'Accept': "*/*",
     }
 
-    response1 = S.get(
+    response1 = cached_session().get(
         AUTH_API_URL + '/authorize',
         params=url_params,
         headers=headers,
@@ -107,16 +122,16 @@ def login(force=False):
         'login[_token]': login_token, 
     }
     
-    response = S.post(
+    response = cached_session().post(
         AUTH_API_URL + '/authorize',
         params=url_params,
         data=form_data,
         headers={
             "Content-Type": "application/x-www-form-urlencoded", 
             "Accept": "*/*",
-        }
+        } 
     )
-    
+
     _handle_status_code(response, "login")
 
     token = [param.replace("token=","") for param in response.url.split("&") if param.startswith("token")][0]
@@ -128,13 +143,13 @@ def login(force=False):
     return True
 
 def get_user_profile():
-    response = S.get(API_ENDPOINT + "/users/profile", params={"lang": "en"}, headers=_req_headers())
+    response = cached_session().get(API_ENDPOINT + "/users/profile", params={"lang": "en"}, headers=_req_headers())
     return response.status_code
     
 def get_series_categories():
     config.login_check()
     
-    response = S.get(MY_TV_BASE_URL + "api/v1.11/get/content/pages/series_web/?include=items&filter%5Blang%5D=en", headers=_req_headers())
+    response = cached_session().get(MY_TV_BASE_URL + "api/v1.11/get/content/pages/series_web/?include=items&filter%5Blang%5D=en", headers=_req_headers())
     
     _handle_status_code(response, "get series categories")
     
@@ -152,7 +167,7 @@ def get_series_categories():
 def get_films_categories():
     config.login_check()
     
-    response = S.get(MY_TV_BASE_URL + "api/v1.11/get/content/pages/films_web/?include=items&filter%5Blang%5D=en", headers=_req_headers())
+    response = cached_session().get(MY_TV_BASE_URL + "api/v1.11/get/content/pages/films_web/?include=items&filter%5Blang%5D=en", headers=_req_headers())
     
     _handle_status_code(response, "get films categories")
     
@@ -169,7 +184,7 @@ def get_films_categories():
 
 def get_category_series(params):
     utils.log("Get category series for "+str(params))
-    response = S.get(
+    response = cached_session().get(
         MY_TV_BASE_URL + "api/v1.11/get/content/categories/%s?include=items,items.channel&page[number]=%s&filter[lang]=en" % (params["id"], params["page"]),
         headers=_req_headers()
     )
@@ -189,7 +204,7 @@ def get_category_series(params):
 
 def get_category_films(params):
     utils.log("Get category series for "+str(params))
-    response = S.get(
+    response = cached_session().get(
         MY_TV_BASE_URL + "api/v1.11/get/content/categories/%s?include=items,items.channel&page[number]=%s&filter[lang]=en" % (params["id"], params["page"]),
         headers=_req_headers()
     )
@@ -201,14 +216,21 @@ def get_category_films(params):
         series.append({
             "id": item["id"],
             "title": item["attributes"]["title-localized"],
-            "description":  item["attributes"]["description"],
-            "image": "%s/images/vod/%s/poster-large?width=555" % (API_ENDPOINT, item["id"])
+            "plot":  item["attributes"]["description"],
+            "image": "%s/images/vod/%s/poster-large?width=555" % (API_ENDPOINT, item["id"]),
+            "rating": float(item["attributes"]["imdb-rating"]) if "imdb-rating" in item["attributes"].keys() else 0.0,
+            "duration": int(item["attributes"]["length"]) * 60,
+            "genres": item["attributes"]["genres"],
+            "year": item["attributes"]["year"],
+            "director": item["attributes"]["directors"],
+            "cast": item["attributes"]["actors"],
+            "mediatype": "movie"
         })
         
     return series
 
 def get_series_episodes(series_id, page_size=1000, lang="en"):
-    response = S.get(
+    response = cached_session().get(
         MY_TV_BASE_URL + "api/v1.11/get/content/episodes/%s?page[size]=%s&filter[lang]=%s" % (series_id, page_size, lang),
         headers=_req_headers()
     )
@@ -227,18 +249,28 @@ def get_series_episodes(series_id, page_size=1000, lang="en"):
     return episodes_per_season
 
 def _add_episode(episode):
+    episode_attrs = episode["attributes"]
     return {
         "id": episode["id"],
         "image": "%s/images/vod/%s/poster-large?width=555" % (API_ENDPOINT, episode["id"]),
-        "title": "S%sE%s - %s" % (episode["attributes"]["season-nr"],episode["attributes"]["episode-nr"],episode["attributes"]["episode-name"]),
-        "description": episode["attributes"]["description"],
+        "title": "S%sE%s - %s" % (episode_attrs["season-nr"], episode_attrs["episode-nr"], episode_attrs["episode-name"]),
+        "plot": episode_attrs["description"],
+        "year": episode_attrs["year"],
+        "genre": episode_attrs["genres"],
+        "cast": episode_attrs["actors"] if "actors" in episode_attrs.keys() else [],
+        "director": episode_attrs["directors"] if "directors" in episode_attrs.keys() else [],
+        "rating": "(%s)" % episode_attrs["imdbRating"] if "imdbRating" in episode_attrs.keys() else "",
+        "season": episode_attrs["season-nr"],
+        "episode": episode_attrs["episode-nr"],
+        "duration": episode_attrs["content-stop-time"] if "content-stop-time" in episode_attrs.keys() else "",
+        "imdbnumber": episode_attrs["imdbLink"] if "imdbLink" in episode_attrs.keys() else ""
     }
 
 def get_channels():
     config.login_check()
 
     url = API_ENDPOINT + '/packaging/services?flattenBundles=true'
-    response = S.get(url, headers=_req_headers())
+    response = cached_session().get(url, headers=_req_headers())
 
     _handle_status_code(response, "get channels")
 
@@ -261,7 +293,7 @@ def get_continue_watching(page):
 
     url = API_ENDPOINT + '/user-video-profile/time'
     url_params = { "contentType": "vod", "pageIndex": page, "pageSize":"20"}
-    response = S.get(url, headers=_req_headers(), params=url_params)
+    response = cached_session().get(url, headers=_req_headers(), params=url_params)
     
     _handle_status_code(response, "get continue watching")
     
@@ -270,7 +302,7 @@ def get_continue_watching(page):
 def get_vod_bulk(list_of_ids):
     ids_url_params = reduce(lambda acc,id: acc+"id="+str(id)+"&", list_of_ids, "")
     url = API_ENDPOINT + '/vod/bulk?' + ids_url_params + "lang=en"
-    response = S.get(url, headers=_req_headers())
+    response = cached_session().get(url, headers=_req_headers())
     
     _handle_status_code(response, "get vod bulk: "+ids_url_params)
     
@@ -280,17 +312,33 @@ def get_vod_bulk(list_of_ids):
             vods.append({
                 "type": "series",
                 "id": vod["series"]["id"],
-                "title": "%s - S%sE%s" % (vod["series"]["title"], vod["episode"]["seasonNr"], vod["episode"]["seasonNr"]),
-                "description": vod["description"] if "description" in vod.keys() else "",
+                "title": vod["title"],
+                "plot": vod["description"] if "description" in vod.keys() else "",
                 "image": "%s/images/vod/%s/poster-large?width=555" % (API_ENDPOINT, vod["id"]),
+                "year": vod["year"],
+                "genre": vod["genres"],
+                "cast": vod["actors"] if "actors" in vod.keys() else [],
+                "director": vod["directors"] if "directors" in vod.keys() else [],
+                "rating": vod["imdbRating"] if "imdbRating" in vod.keys() else 0.0,
+                "season": vod["episode"]["seasonNr"],
+                "episode": vod["episode"]["episodeNr"],
+                "duration": vod["duration"] * 60,
+                "imdbnumber": vod["imdbLink"] if "imdbLink" in vod.keys() else ""
             })
         elif vod["type"] == "movie":
             vods.append({
                 "type": "movie",
                 "id": vod["id"],
                 "title": vod["title"],
-                "description": vod["description"] if "description" in vod.keys() else "",
-                "image": "%s/images/vod/%s/poster-large?width=555" % (API_ENDPOINT, vod["id"])
+                "plot": vod["description"] if "description" in vod.keys() else "",
+                "image": "%s/images/vod/%s/poster-large?width=555" % (API_ENDPOINT, vod["id"]),
+                "year": vod["year"],
+                "genre": vod["genres"],
+                "cast": vod["actors"] if "actors" in vod.keys() else [],
+                "director": vod["directors"] if "directors" in vod.keys() else [],
+                "rating": vod["imdbRating"] if "imdbRating" in vod.keys() else 0.0,
+                "imdbnumber": vod["imdbLink"] if "imdbLink" in vod.keys() else "",
+                "duration": vod["duration"]
             })
             
     return vods
@@ -298,7 +346,7 @@ def get_vod_bulk(list_of_ids):
 def mark_vod_in_progress(id):
     url = API_ENDPOINT + "/user-video-profile/time/vod/%s" % (id)
     payload = { "position": 189 } # TODO: check if vod watch status update be properly implemented
-    response = S.put(url, headers=_req_headers(), data=json.dumps(payload))
+    response = cached_session().put(url, headers=_req_headers(), data=json.dumps(payload))
     
     _handle_status_code(response, "mark vod in progress")
 
@@ -308,7 +356,7 @@ def get_stream_url(data_url, channel_or_vod):
 
     url = API_ENDPOINT + "/stream/v2/%s/%s" % (channel_or_vod, data_url)
     
-    response = S.get(url, headers=_req_headers())
+    response = cached_session().get(url, headers=_req_headers())
 
     _handle_status_code(response, "get stream url")
 
@@ -325,7 +373,7 @@ def get_license_token(data_url, channel_or_vod):
         channel_or_vod = "svod"
 
     url = API_ENDPOINT + "/access-rights/resource-auth/%s/%s" % (channel_or_vod, data_url)
-    response = S.get(url, headers=_req_headers())
+    response = cached_session().get(url, headers=_req_headers())
 
     _handle_status_code(response, "get license token")
 
@@ -342,7 +390,7 @@ def get_epg(timestampFrom,timestampTo ):
     }
 
     url = API_ENDPOINT + "/epg/lv"
-    response = S.get(url, params=url_params, headers=_req_headers())
+    response = cached_session().get(url, params=url_params, headers=_req_headers())
 
     _handle_status_code(response, "get epg")
 

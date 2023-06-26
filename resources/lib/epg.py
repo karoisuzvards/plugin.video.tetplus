@@ -54,8 +54,8 @@ def build_epg():
 
     channels = api.get_channels()
 
-    yesterday = (datetime.date.today() - datetime.timedelta(days = 3)).strftime('%s')
-    tomorrow = (datetime.date.today() + datetime.timedelta(days = 3)).strftime('%s')
+    yesterday = (datetime.date.today() - datetime.timedelta(days = 7)).strftime('%s')
+    tomorrow = (datetime.date.today() + datetime.timedelta(days = 5)).strftime('%s')
     
     channel_epgs = api.get_epg(yesterday, tomorrow)
 
@@ -88,7 +88,7 @@ def build_epg():
                                             channel=str(item["id"]))
             ElementTree.SubElement(xml_prog, "title", lang="en").text = epg["title"]
             ElementTree.SubElement(xml_prog, "desc", lang="en").text = (epg["summary"] if "summary" in epg else "")
-            ElementTree.SubElement(xml_prog, "icon", src="%s/images/epg/%s/lv?quality=80&width=280" % (api.API_BASEURL, epg["id"]))
+            ElementTree.SubElement(xml_prog, "icon", src="%s/images/epg/%s/lv?quality=80&width=280" % (api.API_ENDPOINT, epg["id"]))
 
     indent(xml_tv)
     xml_str = ElementTree.tostring(xml_tv, encoding="utf-8", method="xml").decode("utf-8")
@@ -126,7 +126,7 @@ def configure_epg():
     <setting id="startNum" default="true">1</setting>
     <setting id="numberByOrder" default="true">false</setting>
     <setting id="m3uRefreshMode" default="true">1</setting>
-    <setting id="m3uRefreshIntervalMins" default="true">1</setting>
+    <setting id="m3uRefreshIntervalMins" default="true">60</setting>
     <setting id="m3uRefreshHour" default="true">4</setting>
     <setting id="tvGroupMode" default="true">0</setting>
     <setting id="numTvGroups" default="true">1</setting>

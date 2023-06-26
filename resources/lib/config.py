@@ -62,6 +62,14 @@ def set_token(token):
 def get_token():
     return get_setting(constants.TOKEN)
 
+def auth_token_should_update():
+    t1 = utils.dateFromString(get_setting(constants.LAST_LOGIN))
+    t2 = datetime.datetime.now()
+    return abs(t2 - t1) > datetime.timedelta(days=3)
+
+def set_auth_token_updated():
+    return set_setting(constants.LAST_LOGIN, utils.stringFromDateNow())
+
 # auth req uses 10 digit random key
 # TODO: move to utils?
 def get_secret_key():
@@ -81,7 +89,6 @@ def configCheck():
         showSettingsGui()
         return
 
-
 def login_check():
     utils.log("Login check")
     if utils.isEmpty(get_token()):
@@ -89,20 +96,15 @@ def login_check():
         if utils.isEmpty(get_username()) or utils.isEmpty(get_password()):
             showSettingsGui()
             return
-        _login_and_show_notif()
+        login_and_show_notif()
         return
-    else:
-        status_code = api.get_user_profile()
-        if status_code == 401:
-            _login_and_show_notif(True)
-        else:
-            utils.log("Lattelecom login token seems quite fresh.")
 
-def _login_and_show_notif(force=False):
+def login_and_show_notif(force=False):
     # Log in and show a status notification
     try:
         api.login(force=force)
         showGuiNotification("Login successful")
+        set_auth_token_updated()
     except ApiError as e:
         showGuiNotification(str(e))
         utils.log(str(e))

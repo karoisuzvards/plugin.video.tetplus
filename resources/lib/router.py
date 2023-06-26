@@ -28,7 +28,7 @@ def router(base_url, addon_handle, params):
         elif params['action'] == SHOW_FILMS:
             make_films_categories_list(base_url, addon_handle, params)
         elif params['action'] == PLAY_STREAM:
-            play_channel()
+            play_channel(base_url, addon_handle, params)
         elif params['action'] == SHOW_SERIES_CATEGORY:
             make_category_series_list(base_url, addon_handle, params)
         elif params['action'] == SHOW_FILMS_CATEGORY:
@@ -46,7 +46,7 @@ def router(base_url, addon_handle, params):
 
 def make_main_menu(base_url, addon_handle):
     continue_watch = xbmcgui.ListItem(label="Continue Watching")
-    continue_watch_url = "%s?action=%s&page=0" % (base_url, SHOW_CONTINUE_WATCHING)
+    continue_watch_url = "%s?action=%s&page=0&id=0" % (base_url, SHOW_CONTINUE_WATCHING)
     xbmcplugin.addDirectoryItem(handle=int(addon_handle), url=continue_watch_url, listitem=continue_watch, isFolder=True)
     
     movies = xbmcgui.ListItem(label="Live TV")
