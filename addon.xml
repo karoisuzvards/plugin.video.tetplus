@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<addon id="plugin.video.tetplus-unofficial" version="0.6" name="Tet Plus (unofficial)" provider-name="karoisuzvards,janhouse,martinsbalodis">
+<addon id="plugin.video.tetplus-unofficial" version="0.7" name="Tet Plus (unofficial)" provider-name="karoisuzvards,janhouse,martinsbalodis">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0"/>
 		<import addon="pvr.iptvsimple"/>
@@ -22,6 +22,10 @@
 		<website>https://github.com/karoisuzvards/plugin.video.tetplus</website>
 		<source>https://github.com/karoisuzvards/plugin.video.tetplus</source>
 		<news>
+0.7
+* introduce default language toggle from settings
+* enrich videos with more video metadata
+* force InfoWall view when tv series episodes/films are shown
 0.6
 * reintroduce EPG support
 * To use kodi native TV tab - install addon IPTV Simple PVR
