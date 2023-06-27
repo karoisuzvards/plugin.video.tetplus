@@ -71,6 +71,11 @@ def _req_headers():
         'X-Device-ID': '{"app":{"name":"Tet+","version":"2022_12_19-14_31_59-d62690b4"},"os":{"name":"Kodi","version":"v19.0.4"},"browser":{"name":"Firefox","version":"108.0"}}'
     }
     
+def _default_url_params():
+    return {
+        "lang": config.get_language()
+    }
+    
 def _handle_status_code(response, operation):
     if response.status_code == 401:
         config.logout()
@@ -93,7 +98,6 @@ def login(force=False):
     secret_key = config.get_secret_key()
         
     url_params = {
-        'lang': 'lv',
         'response_type': 'code',
         'client_id': 'shortcut',
         'state': '{"redirectUri":"https://tet.plus/login","secretKey":'+secret_key+'}',
@@ -105,7 +109,7 @@ def login(force=False):
 
     response1 = cached_session().get(
         AUTH_API_URL + '/authorize',
-        params=url_params,
+        params={**_default_url_params, **url_params},
         headers=headers,
     )
     # get magic token from login form
@@ -143,13 +147,17 @@ def login(force=False):
     return True
 
 def get_user_profile():
-    response = cached_session().get(API_ENDPOINT + "/users/profile", params={"lang": "en"}, headers=_req_headers())
+    response = cached_session().get(API_ENDPOINT + "/users/profile", params=_default_url_params(), headers=_req_headers())
     return response.status_code
     
 def get_series_categories():
     config.login_check()
     
-    response = cached_session().get(MY_TV_BASE_URL + "api/v1.11/get/content/pages/series_web/?include=items&filter%5Blang%5D=en", headers=_req_headers())
+    response = cached_session().get(
+        MY_TV_BASE_URL + "api/v1.11/get/content/pages/series_web/",
+        params={"include":"items", "filter[lang]": config.get_language()}, 
+        headers=_req_headers()
+    )
     
     _handle_status_code(response, "get series categories")
     
@@ -167,7 +175,11 @@ def get_series_categories():
 def get_films_categories():
     config.login_check()
     
-    response = cached_session().get(MY_TV_BASE_URL + "api/v1.11/get/content/pages/films_web/?include=items&filter%5Blang%5D=en", headers=_req_headers())
+    response = cached_session().get(
+        MY_TV_BASE_URL + "api/v1.11/get/content/pages/films_web/",
+        params={"include": "items", "filter[lang]": config.get_language()},
+        headers=_req_headers()
+    )
     
     _handle_status_code(response, "get films categories")
     
@@ -185,7 +197,8 @@ def get_films_categories():
 def get_category_series(params):
     utils.log("Get category series for "+str(params))
     response = cached_session().get(
-        MY_TV_BASE_URL + "api/v1.11/get/content/categories/%s?include=items,items.channel&page[number]=%s&filter[lang]=en" % (params["id"], params["page"]),
+        MY_TV_BASE_URL + f"api/v1.11/get/content/categories/{params['id']}",
+        params={"include": "items,items.channel", "page[number]": params['page'], "filter[lang]": config.get_language()},
         headers=_req_headers()
     )
     
@@ -205,7 +218,8 @@ def get_category_series(params):
 def get_category_films(params):
     utils.log("Get category series for "+str(params))
     response = cached_session().get(
-        MY_TV_BASE_URL + "api/v1.11/get/content/categories/%s?include=items,items.channel&page[number]=%s&filter[lang]=en" % (params["id"], params["page"]),
+        MY_TV_BASE_URL + f"api/v1.11/get/content/categories/{params['id']}",
+        params={"include":"items,items.channel", "page[number]": params['page'], "filter[lang]": config.get_language()},
         headers=_req_headers()
     )
     
@@ -229,9 +243,10 @@ def get_category_films(params):
         
     return series
 
-def get_series_episodes(series_id, page_size=1000, lang="en"):
+def get_series_episodes(series_id, page_size=1000):
     response = cached_session().get(
-        MY_TV_BASE_URL + "api/v1.11/get/content/episodes/%s?page[size]=%s&filter[lang]=%s" % (series_id, page_size, lang),
+        MY_TV_BASE_URL + f"api/v1.11/get/content/episodes/{series_id}",
+        params={"page[size]": page_size, "filter[lang]": config.get_language()},
         headers=_req_headers()
     )
     
@@ -259,18 +274,18 @@ def _add_episode(episode):
         "genre": episode_attrs["genres"],
         "cast": episode_attrs["actors"] if "actors" in episode_attrs.keys() else [],
         "director": episode_attrs["directors"] if "directors" in episode_attrs.keys() else [],
-        "rating": "(%s)" % episode_attrs["imdbRating"] if "imdbRating" in episode_attrs.keys() else "",
+        "rating": "(IMDB: %s)" % episode_attrs["imdb-rating"] if "imdb-rating" in episode_attrs.keys() else "",
         "season": episode_attrs["season-nr"],
         "episode": episode_attrs["episode-nr"],
         "duration": episode_attrs["content-stop-time"] if "content-stop-time" in episode_attrs.keys() else "",
-        "imdbnumber": episode_attrs["imdbLink"] if "imdbLink" in episode_attrs.keys() else ""
+        "imdbnumber": episode_attrs["imdb-link"] if "imdb-link" in episode_attrs.keys() else ""
     }
 
 def get_channels():
     config.login_check()
 
     url = API_ENDPOINT + '/packaging/services?flattenBundles=true'
-    response = cached_session().get(url, headers=_req_headers())
+    response = cached_session().get(url, headers=_req_headers(), params=_default_url_params())
 
     _handle_status_code(response, "get channels")
 
@@ -301,7 +316,7 @@ def get_continue_watching(page):
        
 def get_vod_bulk(list_of_ids):
     ids_url_params = reduce(lambda acc,id: acc+"id="+str(id)+"&", list_of_ids, "")
-    url = API_ENDPOINT + '/vod/bulk?' + ids_url_params + "lang=en"
+    url = API_ENDPOINT + '/vod/bulk?' + ids_url_params + f"lang={config.get_language()}"
     response = cached_session().get(url, headers=_req_headers())
     
     _handle_status_code(response, "get vod bulk: "+ids_url_params)
@@ -356,7 +371,7 @@ def get_stream_url(data_url, channel_or_vod):
 
     url = API_ENDPOINT + "/stream/v2/%s/%s" % (channel_or_vod, data_url)
     
-    response = cached_session().get(url, headers=_req_headers())
+    response = cached_session().get(url, headers=_req_headers(), params=_default_url_params())
 
     _handle_status_code(response, "get stream url")
 
@@ -385,12 +400,11 @@ def get_epg(timestampFrom,timestampTo ):
     
     url_params = {
         "from": timestampFrom,
-        "to": timestampTo,
-        "lang": "en"
+        "to": timestampTo
     }
 
     url = API_ENDPOINT + "/epg/lv"
-    response = cached_session().get(url, params=url_params, headers=_req_headers())
+    response = cached_session().get(url, params={**_default_url_params(), **url_params}, headers=_req_headers())
 
     _handle_status_code(response, "get epg")
 

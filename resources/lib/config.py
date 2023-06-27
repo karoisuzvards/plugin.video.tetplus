@@ -62,6 +62,9 @@ def set_token(token):
 def get_token():
     return get_setting(constants.TOKEN)
 
+def get_language():
+    return get_setting(constants.LANGUAGE) or "en"
+
 def auth_token_should_update():
     t1 = utils.dateFromString(get_setting(constants.LAST_LOGIN))
     t2 = datetime.datetime.now()
