@@ -109,7 +109,7 @@ def login(force=False):
 
     response1 = cached_session().get(
         AUTH_API_URL + '/authorize',
-        params={**_default_url_params, **url_params},
+        params={**_default_url_params(), **url_params},
         headers=headers,
     )
     # get magic token from login form
