@@ -31,7 +31,7 @@ MY_TV_BASE_URL = "https://manstv.lattelecom.tv/"
 
 API_ENDPOINT = API_BASEURL + "/api"
 
-API_ENDPOINTS_NOT_TO_CACHE = ["user-video-profile/time", "users/profile", "authorize" ]
+API_ENDPOINTS_NOT_TO_CACHE = ["user-video-profile/time", "users/profile", "authorize","access-rights/resource-auth" ]
 
 def should_not_cache_request(req_url):
     return any(url in req_url for url in API_ENDPOINTS_NOT_TO_CACHE)
