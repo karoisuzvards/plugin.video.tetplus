@@ -79,3 +79,6 @@ def unixTSFromDateString(string):
 
 def stringFromDateNow():
     return datetime.datetime.now().strftime(DATE_FORMAT)
+
+def forceInfoWallView():
+    xbmc.executebuiltin('Container.SetViewMode(54)')

@@ -1,5 +1,6 @@
 import sys
 
+import xbmc
 import xbmcgui
 import xbmcplugin
 
@@ -75,6 +76,7 @@ def make_category_series_list(base_url, addon_handle, params):
     _add_pagination_folder(base_url, params, items, SHOW_SERIES_CATEGORY)
     
     xbmcplugin.addDirectoryItems(handle=addon_handle, items=items, totalItems=len(items))
+    utils.forceInfoWallView()
     xbmcplugin.endOfDirectory(handle=addon_handle)
 
 def make_category_films_list(base_url, addon_handle, params):
@@ -97,6 +99,7 @@ def make_category_films_list(base_url, addon_handle, params):
         
     xbmcplugin.setContent(handle=addon_handle, content='videos')
     xbmcplugin.addDirectoryItems(handle=addon_handle, items=items, totalItems=len(items))
+    utils.forceInfoWallView()
     xbmcplugin.endOfDirectory(handle=addon_handle)
 
 def make_series_seasons(base_url, addon_handle, params):
@@ -144,6 +147,7 @@ def make_series_episodes(base_url, addon_handle, params):
     
     xbmcplugin.setContent(handle=addon_handle, content='episodes')
     xbmcplugin.addDirectoryItems(handle=addon_handle, items=items, totalItems=len(items))
+    utils.forceInfoWallView()
     xbmcplugin.endOfDirectory(handle=addon_handle)
 
 # Ruby has Hash#except, another example that Ruby is superior 
@@ -174,6 +178,7 @@ def make_continue_watching(base_url, addon_handle, params):
 
     xbmcplugin.setContent(handle=addon_handle, content='videos')
     xbmcplugin.addDirectoryItems(handle=addon_handle, items=items, totalItems=len(items))
+    utils.forceInfoWallView()
     xbmcplugin.endOfDirectory(handle=addon_handle)
 
 def make_channel_list():
@@ -196,6 +201,7 @@ def make_channel_list():
             ok = xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]), url=url, listitem=listitem, isFolder=False,
                                              totalItems=len(channels))
 
+        utils.forceInfoWallView()
         xbmcplugin.endOfDirectory(handle=int(sys.argv[1]), succeeded=ok)
         xbmcplugin.setContent(handle=int(sys.argv[1]), content='episodes')
     except:
@@ -221,7 +227,7 @@ def play_channel(base_url, addon_handle, params):
         playitem.setProperty('inputstream', 'inputstream.adaptive')
         playitem.setProperty('inputstream.adaptive.manifest_type', 'mpd')
         playitem.setProperty('inputstream.adaptive.license_type', 'com.widevine.alpha')
-        playitem.setProperty('inputstream.adaptive.license_key', stream_info['licUrl']+"|tpar-sc-jwt="+licToken+"|R|R")
+        playitem.setProperty('inputstream.adaptive.license_key', stream_info['licUrl']+"|tpar-sc-jwt="+licToken+"|R{SSM}|")
         if params["type"] == "vod":
             api.mark_vod_in_progress(params["data_url"])
             
