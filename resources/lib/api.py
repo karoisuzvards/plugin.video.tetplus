@@ -68,7 +68,7 @@ def _req_headers():
         'User-Agent': 'Kodi v19 (Matrix) - python3.requests',
         'Authorization': 'Bearer '+ config.get_token(),
         'Accept-Encoding': 'gzip, deflate, br',
-        'X-Device-ID': '{"app":{"name":"Tet+","version":"2022_12_19-14_31_59-d62690b4"},"os":{"name":"Kodi","version":"v19.0.4"},"browser":{"name":"Firefox","version":"108.0"}}'
+        'X-Device-ID': '{"app":{"name":"Tet+","version":"<VERSION>"},"os":{"name":"Kodi","version":"19"},"browser":{"name":"Kodi","version":"19"}}'
     }
     
 def _default_url_params():
