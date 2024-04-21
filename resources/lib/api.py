@@ -1,7 +1,6 @@
 import json
 from datetime import timedelta
 from . import config
-from . import constants
 from . import utils
 from functools import reduce
 import xbmcvfs
@@ -9,20 +8,22 @@ import xbmcaddon
 
 from .exceptions import ApiError
 
-import requests
 from requests_cache import CachedSession
 from bs4 import BeautifulSoup
 
-# on osmc 2022.11 build need to lower SSL ciphers - as manstv uses some old ones
-import urllib3
+from urllib3.util import create_urllib3_context
+from urllib3 import PoolManager
+from requests.adapters import HTTPAdapter
 
-requests.packages.urllib3.disable_warnings()
-requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ':HIGH:!DH:!aNULL'
-try:
-    requests.packages.urllib3.contrib.pyopenssl.util.ssl_.DEFAULT_CIPHERS += ':HIGH:!DH:!aNULL'
-except AttributeError:
-    # no pyopenssl support used / needed / available
-    pass
+class AddedCipherAdapter(HTTPAdapter):
+  def init_poolmanager(self, connections, maxsize, block=False):
+    ctx = create_urllib3_context(ciphers=":HIGH:!DH:!aNULL")
+    self.poolmanager = PoolManager(
+      num_pools=connections,
+      maxsize=maxsize,
+      block=block,
+      ssl_context=ctx
+    )
 
 AUTH_API_URL = 'https://connect.tet.lv'
 
@@ -59,6 +60,7 @@ def cached_session():
             stale_if_error=False,
             filter_fn=skip_cache_for_following_requests
         )
+        GLOBAL_SESSION.mount(MY_TV_BASE_URL, AddedCipherAdapter())
     return GLOBAL_SESSION
 
 def _req_headers():
