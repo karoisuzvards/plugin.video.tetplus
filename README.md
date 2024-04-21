@@ -95,7 +95,7 @@ More info: https://github.com/xbmc/inputstream.adaptive/wiki/Stream-selection-ty
 
 ### Setup
 
-* install kodi 19.x on your workstation
+* install kodi 20.x on your workstation
 * clone this repo and move it to addon directory (https://kodi.wiki/view/Kodi_data_folder)
 * open your editor, make changes and test them instantly on launched Kodi instance
 * create PR against the repo :)
